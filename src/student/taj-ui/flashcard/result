@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Session Results</title>
+    <style>
+        :root {
+            --blue-primary: #0d6efd;
+            --blue-light: #e7f1ff;
+            --green: #198754;
+            --orange: #fd7e14;
+            --text-dark: #212529;
+            --text-light: #6c757d;
+            --card-bg: #ffffff;
+            --shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .result-page {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: var(--blue-light);
+            background-image: linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .content-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .result-header .illustration {
+            width: 100px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+
+        .result-header h1 {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin: 0 0 8px 0;
+        }
+
+        .result-header p {
+            font-size: 1rem;
+            color: var(--text-light);
+            margin: 0;
+            max-width: 350px;
+        }
+
+        .result-body {
+            width: 100%;
+            max-width: 400px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        .progress-card h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
+        }
+        .progress-card #progress-percent {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-bar-fill {
+            width: 0%; /* Set by JS */
+            height: 100%;
+            background: linear-gradient(90deg, var(--green) 0%, #ffc107 100%);
+            border-radius: 4px;
+            transition: width 0.5s ease-out;
+        }
+        .progress-card #progress-status {
+            text-align: right;
+            font-weight: 500;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .stat-card {
+            padding: 20px;
+        }
+        .stat-card .title {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .stat-card .count {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .stat-card .title-learning { color: var(--orange); }
+        .stat-card .title-known { color: var(--green); }
+        .stat-card #view-known-btn {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+            display: block;
+        }
+        
+        .result-footer {
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+        .result-footer button {
+            width: 45%;
+            max-width: 200px;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        #close-btn {
+            background: transparent;
+            color: var(--blue-primary);
+            border: 2px solid var(--blue-primary);
+        }
+        #practice-btn {
+            background: var(--blue-primary);
+            color: white;
+            border: 2px solid var(--blue-primary);
+        }
+
+        /* Modal for viewing cards */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: none; /* Changed by JS */
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 100;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h2 { margin: 0; }
+        .modal-close-btn { font-size: 2rem; cursor: pointer; border: none; background: none; }
+        .modal-body ul { list-style: none; padding: 0; margin-top: 20px; }
+        .modal-body li { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="result-page">
+        <div class="content-wrapper">
+            <header class="result-header">
+                <!-- SVG Illustration -->
+                <svg class="illustration" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M40 78 H60 V30 H40 Z" fill="#4a4a4a"/>
+                    <path d="M60 30 H90 V78 H85 V35 H60 Z" fill="#36a47a"/>
+                    <path d="M60 78 h30 v-2 h-30 z" fill="#36a47a" opacity="0.5"/>
+                    <rect x="44" y="50" width="12" height="15" fill="#e53935"/>
+                    <path d="M42 22 L50 30 L58 22 L50 14 Z" fill="#ffc107"/>
+                </svg>
+                <h1 id="result-title">Calculating...</h1>
+                <p id="result-subtitle">Let's see how you did.</p>
+            </header>
+
+            <div class="result-body">
+                <div class="card progress-card">
+                    <h2>Flashcards</h2>
+                    <p id="progress-percent">0% Done</p>
+                    <div class="progress-bar">
+                        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+                    </div>
+                    <p id="progress-status">Just Started</p>
+                </div>
+
+                <div class="stats-container">
+                    <div class="card stat-card">
+                        <p class="title title-learning">Still learning</p>
+                        <p class="count" id="learning-count">0 Cards</p>
+                    </div>
+                    <div class="card stat-card">
+                        <p class="title title-known">Knew answers for</p>
+                        <p class="count" id="known-count">0 Cards</p>
+                        <a href="#" id="view-known-btn">View →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="result-footer">
+            <button id="close-btn">Close</button>
+            <button id="practice-btn">Keep Practicing</button>
+        </footer>
+    </div>
+
+    <!-- Modal for viewing known cards -->
+    <div class="modal-overlay" id="view-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Cards You Knew</h2>
+                <button class="modal-close-btn">×</button>
+            </div>
+            <div class="modal-body">
+                <ul id="modal-list">
+                    <!-- Cards will be populated here by JS -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        window.onload = () => {
+            const resultsData = sessionStorage.getItem('flashcardResults');
+            if (!resultsData) {
+                document.querySelector('.content-wrapper').innerHTML = '<h1>No result data found.</h1><p>Please complete a flashcard session first.</p>';
+                document.querySelector('.result-footer').style.display = 'none';
+                return;
+            }
+
+            const results = JSON.parse(resultsData);
+            const totalCards = results.length;
+            
+            const knownCards = results.filter(card => card.status === 'known');
+            const learningCards = results.filter(card => card.status === 'learning');
+            
+            const knownCount = knownCards.length;
+            const learningCount = learningCards.length;
+            const percentKnown = totalCards > 0 ? Math.round((knownCount / totalCards) * 100) : 0;
+
+            // --- Update UI Elements ---
+            document.getElementById('progress-percent').textContent = `${percentKnown}% Done`;
+            document.getElementById('progress-bar-fill').style.width = `${percentKnown}%`;
+            document.getElementById('learning-count').textContent = `${learningCount} Cards`;
+            document.getElementById('known-count').textContent = `${knownCount} Cards`;
+            
+            // --- Set Dynamic Titles and Status ---
+            const resultTitle = document.getElementById('result-title');
+            const resultSubtitle = document.getElementById('result-subtitle');
+            const progressStatus = document.getElementById('progress-status');
+
+            if (percentKnown === 100) {
+                resultTitle.textContent = 'Excellent!';
+                resultSubtitle.textContent = "You've mastered this set. Great job!";
+                progressStatus.textContent = 'Completed!';
+            } else if (percentKnown >= 75) {
+                resultTitle.textContent = 'Great Progress!';
+                resultSubtitle.textContent = 'You are just a few steps away from mastering this.';
+                progressStatus.textContent = 'Almost there!';
+            } else if (percentKnown >= 50) {
+                resultTitle.textContent = 'Good Job!';
+                resultSubtitle.textContent = "You're getting the hang of it. Keep it up!";
+                progressStatus.textContent = 'In Progress';
+            } else {
+                resultTitle.textContent = 'Going so soon?';
+                resultSubtitle.textContent = 'You can continue revising this set anytime.';
+                progressStatus.textContent = totalCards > 0 ? 'In Progress' : 'Just Started';
+            }
+            
+            // --- Setup Modal ---
+            const viewModal = document.getElementById('view-modal');
+            const viewBtn = document.getElementById('view-known-btn');
+            const modalCloseBtn = document.querySelector('.modal-close-btn');
+            const modalList = document.getElementById('modal-list');
+
+            if (knownCount === 0) {
+                viewBtn.style.display = 'none';
+            } else {
+                viewBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    modalList.innerHTML = ''; // Clear previous list
+                    knownCards.forEach(card => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<strong>Q:</strong> ${card.question}<br><strong>A:</strong> ${card.answer}`;
+                        modalList.appendChild(li);
+                    });
+                    viewModal.style.display = 'flex';
+                });
+            }
+
+            function closeModal() {
+                viewModal.style.display = 'none';
+            }
+
+            modalCloseBtn.addEventListener('click', closeModal);
+            viewModal.addEventListener('click', (e) => {
+                if (e.target === viewModal) { // Click on overlay background
+                    closeModal();
+                }
+            });
+
+            // --- Setup Footer Buttons ---
+            document.getElementById('practice-btn').addEventListener('click', () => {
+                window.history.back(); // Go back to 3.html
+            });
+
+            document.getElementById('close-btn').addEventListener('click', () => {
+                window.history.go(-2); // Attempt to go back to 2.html (chapter list)
+            });
+
+            // Clean up for next session
+            sessionStorage.removeItem('flashcardResults');
+        };
+    </script>
+</body>
+</html>
