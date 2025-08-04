@@ -18,6 +18,9 @@
 
         .controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         #search-box { padding: 10px 15px; font-size: 16px; border: 1px solid #ddd; border-radius: 8px; width: 300px; max-width: 100%; }
+        #fix-data-btn { background-color: #ffc107; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        #fix-data-btn:hover { background-color: #e0a800; }
+        #fix-data-btn:disabled { background-color: #ffeeba; cursor: not-allowed; }
         
         #bulk-action-bar {
             display: none; /* Hidden by default */
@@ -58,6 +61,7 @@
         
         <div class="controls">
             <input type="text" id="search-box" placeholder="Search by name, email, or mobile...">
+            <button id="fix-data-btn">Fix Class Data Types</button>
         </div>
 
         <div id="bulk-action-bar">
@@ -99,32 +103,13 @@
         
         const renderTable = (users) => {
             tableBody.innerHTML = '';
-            if (users.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No users found.</td></tr>';
-                return;
-            }
+            if (users.length === 0) { tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No users found.</td></tr>'; return; }
             users.forEach(user => {
                 const isSelected = selectedUserIds.has(user.id);
                 const row = document.createElement('tr');
                 if (isSelected) row.classList.add('selected');
-
                 const allowSwitch = user.role === 'Student' ? `<label class="switch"><input type="checkbox" class="allow-toggle" data-id="${user.id}" ${user.isAllowed ? 'checked' : ''}><span class="slider"></span></label>` : 'N/A';
-                
-                row.innerHTML = `
-                    <td><input type="checkbox" class="row-checkbox" data-id="${user.id}" ${isSelected ? 'checked' : ''}></td>
-                    <td>${user.fullName || 'N/A'}</td>
-                    <td>${user.mobileNumber || 'N/A'}</td>
-                    <td>${user.email || 'N/A'}</td>
-                    <td>
-                        <select class="role-select" data-id="${user.id}">
-                            <option value="Student" ${user.role === 'Student' ? 'selected' : ''}>Student</option>
-                            <option value="Teacher" ${user.role === 'Teacher' ? 'selected' : ''}>Teacher</option>
-                            <option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option>
-                        </select>
-                    </td>
-                    <td>${allowSwitch}</td>
-                    <td><button class="btn-delete-single" data-id="${user.id}" data-name="${user.fullName}">Delete</button></td>
-                `;
+                row.innerHTML = `<td><input type="checkbox" class="row-checkbox" data-id="${user.id}" ${isSelected ? 'checked' : ''}></td><td>${user.fullName || 'N/A'}</td><td>${user.mobileNumber || 'N/A'}</td><td>${user.email || 'N/A'}</td><td><select class="role-select" data-id="${user.id}"><option value="Student" ${user.role === 'Student' ? 'selected' : ''}>Student</option><option value="Teacher" ${user.role === 'Teacher' ? 'selected' : ''}>Teacher</option><option value="Admin" ${user.role === 'Admin' ? 'selected' : ''}>Admin</option></select></td><td>${allowSwitch}</td><td><button class="btn-delete-single" data-id="${user.id}" data-name="${user.fullName}">Delete</button></td>`;
                 tableBody.appendChild(row);
             });
             addEventListeners();
@@ -134,113 +119,60 @@
             const bar = document.getElementById('bulk-action-bar');
             const countSpan = document.getElementById('selection-count');
             const selectAllCheckbox = document.getElementById('select-all-checkbox');
-            
-            if (selectedUserIds.size > 0) {
-                bar.classList.add('visible');
-                countSpan.textContent = `${selectedUserIds.size} user(s) selected`;
-            } else {
-                bar.classList.remove('visible');
-            }
-            // Update "Select All" checkbox state
+            if (selectedUserIds.size > 0) { bar.classList.add('visible'); countSpan.textContent = `${selectedUserIds.size} user(s) selected`; } else { bar.classList.remove('visible'); }
             const displayedUsers = getDisplayedUsers();
             selectAllCheckbox.checked = displayedUsers.length > 0 && displayedUsers.every(user => selectedUserIds.has(user.id));
         };
 
         const addEventListeners = () => {
-            // Individual row checkboxes
-            document.querySelectorAll('.row-checkbox').forEach(box => {
-                box.addEventListener('change', e => {
-                    const userId = e.target.dataset.id;
-                    if (e.target.checked) selectedUserIds.add(userId); else selectedUserIds.delete(userId);
-                    e.target.closest('tr').classList.toggle('selected', e.target.checked);
-                    updateBulkActionUI();
-                });
-            });
-            // Individual delete buttons
-            document.querySelectorAll('.btn-delete-single').forEach(btn => {
-                btn.addEventListener('click', async e => {
-                    const userId = e.target.dataset.id;
-                    const userName = e.target.dataset.name;
-                    if (confirm(`Are you sure you want to delete ${userName}? This cannot be undone.`)) {
-                        await db.collection('users').doc(userId).delete();
-                        alert(`${userName} has been deleted.`);
-                        loadUsers(); // Reload all data
-                    }
-                });
-            });
-            // Individual role/allow toggles (event delegation is better but direct binding is ok here)
-            document.querySelectorAll('.role-select, .allow-toggle').forEach(el => {
-                el.addEventListener('change', async e => {
-                    const userId = e.target.dataset.id;
-                    const field = e.target.classList.contains('role-select') ? 'role' : 'isAllowed';
-                    const value = e.target.classList.contains('allow-toggle') ? e.target.checked : e.target.value;
-                    await db.collection('users').doc(userId).update({ [field]: value });
-                    alert('User updated successfully.');
-                    if (field === 'role') loadUsers(); // Full reload if role changes
-                });
-            });
+            document.querySelectorAll('.row-checkbox').forEach(box => { box.addEventListener('change', e => { const userId = e.target.dataset.id; if (e.target.checked) selectedUserIds.add(userId); else selectedUserIds.delete(userId); e.target.closest('tr').classList.toggle('selected', e.target.checked); updateBulkActionUI(); }); });
+            document.querySelectorAll('.btn-delete-single').forEach(btn => { btn.addEventListener('click', async e => { const userId = e.target.dataset.id; const userName = e.target.dataset.name; if (confirm(`Are you sure you want to delete ${userName}?`)) { await db.collection('users').doc(userId).delete(); alert(`${userName} deleted.`); loadUsers(); } }); });
+            document.querySelectorAll('.role-select, .allow-toggle').forEach(el => { el.addEventListener('change', async e => { const userId = e.target.dataset.id; const field = e.target.classList.contains('role-select') ? 'role' : 'isAllowed'; const value = e.target.classList.contains('allow-toggle') ? e.target.checked : e.target.value; await db.collection('users').doc(userId).update({ [field]: value }); alert('User updated.'); if (field === 'role') loadUsers(); }); });
         };
 
         const getDisplayedUsers = () => {
             const searchTerm = searchBox.value.toLowerCase();
             if (!searchTerm) return allUsers;
-            return allUsers.filter(user =>
-                (user.fullName && user.fullName.toLowerCase().includes(searchTerm)) ||
-                (user.email && user.email.toLowerCase().includes(searchTerm)) ||
-                (user.mobileNumber && user.mobileNumber.includes(searchTerm))
-            );
+            return allUsers.filter(user => (user.fullName && user.fullName.toLowerCase().includes(searchTerm)) || (user.email && user.email.toLowerCase().includes(searchTerm)) || (user.mobileNumber && user.mobileNumber.includes(searchTerm)));
         };
         
-        // --- Main Data Loading Function ---
         const loadUsers = async () => {
-            tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading users...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Loading...</td></tr>';
             try {
                 const snapshot = await db.collection('users').orderBy('fullName').get();
                 allUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 renderTable(allUsers);
                 updateBulkActionUI();
-            } catch (error) {
-                console.error("Error fetching users: ", error);
-                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Failed to load users.</td></tr>';
-            }
+            } catch (error) { console.error("Error fetching users:", error); tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Failed to load users.</td></tr>'; }
         };
         
-        // --- Event Listeners for Controls ---
         searchBox.addEventListener('input', () => renderTable(getDisplayedUsers()));
+        document.getElementById('select-all-checkbox').addEventListener('change', e => { const displayedUsers = getDisplayedUsers(); displayedUsers.forEach(user => { if (e.target.checked) selectedUserIds.add(user.id); else selectedUserIds.delete(user.id); }); renderTable(displayedUsers); updateBulkActionUI(); });
 
-        document.getElementById('select-all-checkbox').addEventListener('change', e => {
-            const displayedUsers = getDisplayedUsers();
-            displayedUsers.forEach(user => {
-                if (e.target.checked) selectedUserIds.add(user.id); else selectedUserIds.delete(user.id);
-            });
-            renderTable(displayedUsers); // Re-render to show selection highlights
-            updateBulkActionUI();
-        });
-
-        // Bulk action handler
         const performBulkUpdate = async (action) => {
             if (selectedUserIds.size === 0) return;
             const actionVerb = { allow: 'allow', deny: 'deny', delete: 'DELETE' }[action];
             if (!confirm(`Are you sure you want to ${actionVerb} ${selectedUserIds.size} user(s)?`)) return;
-
             const batch = db.batch();
-            selectedUserIds.forEach(id => {
-                const docRef = db.collection('users').doc(id);
-                if (action === 'delete') batch.delete(docRef);
-                else batch.update(docRef, { isAllowed: action === 'allow' });
-            });
-
-            await batch.commit();
-            alert(`${selectedUserIds.size} users updated successfully.`);
-            selectedUserIds.clear();
-            loadUsers(); // Full reload
+            selectedUserIds.forEach(id => { const docRef = db.collection('users').doc(id); if (action === 'delete') batch.delete(docRef); else batch.update(docRef, { isAllowed: action === 'allow' }); });
+            await batch.commit(); alert(`${selectedUserIds.size} users updated.`); selectedUserIds.clear(); loadUsers();
         };
 
         document.getElementById('bulk-allow-btn').addEventListener('click', () => performBulkUpdate('allow'));
         document.getElementById('bulk-deny-btn').addEventListener('click', () => performBulkUpdate('deny'));
         document.getElementById('bulk-delete-btn').addEventListener('click', () => performBulkUpdate('delete'));
+        
+        document.getElementById('fix-data-btn').addEventListener('click', async () => {
+            if (!confirm("This will scan all users and convert any numeric 'class' fields to the correct text format. This is safe to run. Continue?")) return;
+            const btn = document.getElementById('fix-data-btn'); btn.disabled = true; btn.textContent = 'Working...';
+            try {
+                const snapshot = await db.collection('users').get();
+                const batch = db.batch(); let updates = 0;
+                snapshot.forEach(doc => { const user = doc.data(); if (user.class && typeof user.class === 'number') { const userRef = db.collection('users').doc(doc.id); batch.update(userRef, { class: user.class.toString() }); updates++; } });
+                if (updates > 0) { await batch.commit(); alert(`Success! Fixed ${updates} user records. The user list will now reload.`); loadUsers(); } else { alert("No records needed fixing. Your data is correct!"); }
+            } catch (error) { console.error("Data fix failed:", error); alert("An error occurred during the fix."); } finally { btn.disabled = false; btn.textContent = 'Fix Class Data Types'; }
+        });
 
-        // Initial Load
         document.addEventListener('DOMContentLoaded', loadUsers);
     </script>
 </body>
