@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question Solution</title>
+    <style>
+        :root {
+            --primary-text: #1a1a1a;
+            --secondary-text: #6c757d;
+            --accent-color: #007bff;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --correct-bg: #d4edda;
+            --correct-border: #28a745;
+            --wrong-bg: #f8d7da;
+            --wrong-border: #dc3545;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+        }
+
+        /* --- Page Layout --- */
+        .header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .back-arrow {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary-text);
+            text-decoration: none;
+        }
+        .header h1 {
+            font-size: 22px;
+            margin: 0;
+        }
+
+        .solution-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        .solution-card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+        }
+        .solution-card h3 { margin-top: 0; }
+        .solution-card p { line-height: 1.6; }
+        .question-image { max-width: 100%; border-radius: 8px; margin-bottom: 20px; }
+
+        .option {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .option img { max-width: 150px; display: block; margin-top: 8px; }
+        .correct-answer { border-color: var(--correct-border); background-color: var(--correct-bg); }
+        .wrong-answer { border-color: var(--wrong-border); background-color: var(--wrong-bg); }
+
+        .answer-summary { font-style: italic; margin: 20px 0; }
+
+        .detailed-solution {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 4px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <a href="#" class="back-arrow" onclick="history.back(); return false;">←</a>
+        <h1>Question Details</h1>
+    </header>
+
+    <main class="solution-container" id="solutionContainer">
+        <!-- Content will be injected here -->
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('solutionContainer');
+            
+            // --- Get data from URL and Session Storage ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const questionIndex = parseInt(urlParams.get('q_index'), 10);
+            
+            const sessionDataJSON = sessionStorage.getItem('testSession');
+
+            // --- Error Handling ---
+            if (isNaN(questionIndex) || !sessionDataJSON) {
+                container.innerHTML = '<p>Error: Could not find question data. Please go back to the review page.</p>';
+                return;
+            }
+
+            const { questions, userAnswers } = JSON.parse(sessionDataJSON);
+
+            if (questionIndex < 0 || questionIndex >= questions.length) {
+                container.innerHTML = '<p>Error: Invalid question index.</p>';
+                return;
+            }
+
+            // --- Get specific question data ---
+            const q = questions[questionIndex];
+            const userAnswerIndex = userAnswers[questionIndex];
+
+            // --- Render the solution ---
+            let optionsHTML = '';
+            q.options.forEach((opt, i) => {
+                let optionClasses = 'option';
+                const correctAnswerIndex = q.correctAnswerIndex;
+
+                if (i === correctAnswerIndex) {
+                    optionClasses += ' correct-answer';
+                } else if (i === userAnswerIndex && userAnswerIndex !== correctAnswerIndex) {
+                    optionClasses += ' wrong-answer';
+                }
+
+                let optContent = `<strong>${opt.text}</strong>`;
+                if (opt.imageUrl) {
+                    optContent += `<img src="${opt.imageUrl}" alt="Option Image">`;
+                }
+                optionsHTML += `<div class="${optionClasses}">${optContent}</div>`;
+            });
+
+            const yourAnswerText = userAnswerIndex !== -1 
+                ? `You marked Option ${userAnswerIndex + 1}.` 
+                : 'You did not attempt this question.';
+
+            const isCorrect = userAnswerIndex === q.correctAnswerIndex;
+            const statusText = userAnswerIndex !== -1 
+                ? (isCorrect ? '<span style="color:green;">(Correct)</span>' : '<span style="color:red;">(Incorrect)</span>') 
+                : '';
+
+            const cardHTML = `
+                <div class="solution-card">
+                    <h3>Question ${questionIndex + 1}</h3>
+                    <p>${q.questionText.replace(/\n/g, '<br>')}</p>
+                    ${q.questionImageUrl ? `<img src="${q.questionImageUrl}" class="question-image">` : ''}
+                    
+                    <hr style="border-style:dashed; margin: 25px 0;">
+                    
+                    <h4>Options:</h4>
+                    <div>${optionsHTML}</div>
+                    
+                    <p class="answer-summary">${yourAnswerText} ${statusText}</p>
+                    
+                    <div class="detailed-solution">
+                        <h4>Detailed Solution</h4>
+                        <p>${q.solution}</p>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = cardHTML;
+        });
+    </script>
+</body>
+</html>
