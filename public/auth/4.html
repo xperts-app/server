@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - ALLEN Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary-blue:#0066ff;--background-color:#f0f4f9;--text-dark:#1d2c3c;--text-light:#5a6b7d;--border-color:#eef2f5}
+        body{font-family:'Poppins',sans-serif;background-color:var(--background-color);margin:0;padding-top:5vh}
+        .main-container{max-width:480px;margin:auto;padding:20px;text-align:center}
+        .illustration{width:150px;height:150px;margin:0 auto 20px auto}
+        h2{font-weight:600;font-size:28px;color:var(--text-dark);margin-bottom:30px}
+        .profile-details{background-color:white;border-radius:16px;padding:20px 30px;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,0.05)}
+        .detail-item{display:flex;justify-content:space-between;align-items:center;padding:18px 0;border-bottom:1px solid var(--border-color)}
+        .detail-item:last-child{border-bottom:none}
+        .detail-item .label{font-weight:500;color:var(--text-light);font-size:15px}
+        .detail-item .value{font-weight:600;color:var(--text-dark);font-size:16px}
+        .actions{margin-top:30px;display:flex;flex-direction:column;gap:15px}
+        .btn{padding:16px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;display:block;transition:all .3s}
+        .btn-primary{background-color:var(--primary-blue);color:#fff}
+        .btn-primary:hover{background-color:#0052cc}
+        .btn-secondary{background-color:#fff;color:var(--text-light);border:1px solid #dbe2ea}
+        .btn-secondary:hover{background-color:#f8f9fa}
+    </style>
+</head>
+<body>
+    <div class="main-container" id="profile-container">
+        <!-- SVG Illustration -->
+        <svg class="illustration" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg"><g><path d="M75 131.8c-20.4 0-39-9.5-51.1-25.5 12.3-15.8 31-25.6 51.1-25.6s38.8 9.8 51.1 25.6c-12.1 16-30.7 25.5-51.1 25.5z" fill="#34c1a5"/><path d="M75 18.2c-15.6 0-28.2 12.6-28.2 28.2s12.6 28.2 28.2 28.2 28.2-12.6 28.2-28.2-12.6-28.2-28.2-28.2z" fill="#ffc157"/><path d="M103.2 46.4c0 15.6-12.6 28.2-28.2 28.2V18.2c15.6 0 28.2 12.6 28.2 28.2z" fill="#ffab2f"/><path d="M103.2 106.3c-12.3-15.8-31-25.6-51.1-25.6v51.1C72.5 131.8 90.9 122.3 103.2 106.3z" fill="#2ca98e"/></g></svg>
+        
+        <h2 id="greeting">Loading profile...</h2>
+
+        <div class="profile-details">
+            <div class="detail-item"><span class="label">Full Name</span><span class="value" id="name-display">...</span></div>
+            <div class="detail-item"><span class="label">Mobile Number</span><span class="value" id="mobile-display">...</span></div>
+            <div class="detail-item"><span class="label">Email ID</span><span class="value" id="email-display">...</span></div>
+            <div class="detail-item"><span class="label">Class</span><span class="value" id="class-display">...</span></div>
+        </div>
+
+        <div class="actions">
+            <a href="5.html" class="btn btn-primary">Edit Profile</a>
+            <a href="#" id="logout-btn" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app", messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('profile-container');
+            const userId = localStorage.getItem('loggedInUserId');
+
+            // Auth Guard: If no user is logged in, redirect to login page.
+            if (!userId) {
+                alert("You must be logged in to view your profile.");
+                window.location.href = '1.html';
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+
+                if (!userDoc.exists) {
+                    alert("User profile not found. Logging out.");
+                    localStorage.clear();
+                    window.location.href = '1.html';
+                    return;
+                }
+
+                const userData = userDoc.data();
+                
+                // Populate the display fields with data from Firestore
+                document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
+                document.getElementById('name-display').textContent = userData.fullName || 'N/A';
+                document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
+                document.getElementById('email-display').textContent = userData.email || 'N/A';
+
+                // Handle combined class/goal display
+                let classText = userData.class || 'N/A';
+                if (userData.goal && (userData.goal === 'NEET' || userData.goal === 'JEE')) {
+                    classText = `${userData.class} ${userData.goal}`;
+                }
+                document.getElementById('class-display').textContent = classText;
+
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                container.innerHTML = '<h2>Error loading profile. Please try again.</h2>';
+            }
+        });
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm("Are you sure you want to logout?")) {
+                localStorage.clear();
+                window.location.href = '1.html';
+            }
+        });
+    </script>
+</body>
+</html>
