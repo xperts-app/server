@@ -15,238 +15,172 @@
             --background-color: #f0f4f9;
             --text-dark: #1d2c3c;
             --text-light: #5a6b7d;
-            --border-color: #dbe2ea;
-            --error-red: #dc3545;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--background-color);
             margin: 0;
-            padding-top: 5vh; /* Gives some space at the top */
         }
 
-        /* The main container is hidden by default to prevent flashing on redirect */
+        /* --- NEW: Loading Overlay Styles --- */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.3s;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(0, 102, 255, 0.2);
+            border-top-color: var(--primary-blue);
+            border-radius: 50%;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* The main container is hidden until we know we need it */
         .main-container {
             display: none;
             max-width: 450px;
             margin: auto;
-            padding: 20px;
+            padding: 5vh 20px 20px 20px;
             text-align: center;
         }
-
-        .illustration {
-            width: 180px;
-            height: 180px;
-            margin: 0 auto 30px auto;
-        }
-
-        h2 {
-            font-weight: 600;
-            font-size: 28px;
-            color: var(--text-dark);
-            margin-bottom: 12px;
-        }
-
-        p.subtitle {
-            color: var(--text-light);
-            font-size: 16px;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-
-        .input-group {
-            margin-bottom: 25px;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 14px;
-            color: var(--text-dark);
-        }
-
-        input {
-            width: 100%;
-            padding: 15px;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            font-size: 16px;
-            box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary-blue);
-            box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
-        }
-
-        .btn-primary {
-            background-color: var(--primary-blue);
-            color: white;
-            border: none;
-            padding: 16px 0;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 600;
-            width: 100%;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
         
-        .btn-primary:disabled {
-            background-color: #a0cffd;
-            cursor: not-allowed;
-        }
+        /* Rest of the styles remain the same as the previous version */
+        .illustration{width:180px;height:180px;margin:0 auto 30px auto}h2{font-weight:600;font-size:28px;color:var(--text-dark);margin-bottom:12px}p.subtitle{color:var(--text-light);font-size:16px;margin-bottom:40px;line-height:1.6}.input-group{margin-bottom:25px;text-align:left}label{display:block;margin-bottom:8px;font-weight:500;font-size:14px;color:var(--text-dark)}input{width:100%;padding:15px;border:1px solid #dbe2ea;border-radius:12px;font-size:16px;box-sizing:border-box;font-family:'Poppins',sans-serif;transition:border-color .3s,box-shadow .3s}input:focus{outline:0;border-color:var(--primary-blue);box-shadow:0 0 0 4px rgba(0,102,255,.1)}.btn-primary{background-color:var(--primary-blue);color:#fff;border:none;padding:16px 0;border-radius:12px;font-size:18px;font-weight:600;width:100%;cursor:pointer;transition:background-color .3s}.btn-primary:disabled{background-color:#a0cffd;cursor:not-allowed}#password-container{display:none}.error-msg{color:#dc3545;font-weight:500;margin-top:20px;min-height:1.2em}
 
-        #password-container {
-            display: none;
-        }
-
-        .error-msg {
-            color: var(--error-red);
-            font-weight: 500;
-            margin-top: 20px;
-            min-height: 1.2em;
-        }
     </style>
 
-    <!-- === INSTANT REDIRECT SCRIPT === -->
+</head>
+<body>
+
+    <!-- This overlay is shown by default. The script will hide it if needed. -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- The login form, initially hidden -->
+    <div class="main-container" id="login-container">
+        <!-- SVG Illustration and form elements go here -->
+        <svg class="illustration" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg"><g><path d="M75 131.8c-20.4 0-39-9.5-51.1-25.5 12.3-15.8 31-25.6 51.1-25.6s38.8 9.8 51.1 25.6c-12.1 16-30.7 25.5-51.1 25.5z" fill="#34c1a5"/><path d="M75 18.2c-15.6 0-28.2 12.6-28.2 28.2s12.6 28.2 28.2 28.2 28.2-12.6 28.2-28.2-12.6-28.2-28.2-28.2z" fill="#ffc157"/><path d="M103.2 46.4c0 15.6-12.6 28.2-28.2 28.2V18.2c15.6 0 28.2 12.6 28.2 28.2z" fill="#ffab2f"/><path d="M103.2 106.3c-12.3-15.8-31-25.6-51.1-25.6v51.1C72.5 131.8 90.9 122.3 103.2 106.3z" fill="#2ca98e"/><path d="M102.5 56.6c-3.1-6.1-9.2-10.2-16.3-10.2H63.8c-10.3 0-18.6 8.3-18.6 18.6v.2c0 10.2 8.3 18.4 18.6 18.4h22.4c7.1 0 13.2-4.1 16.3-10.2 3.8-7.5 1.8-16.7-4.4-22.3-1.1-.9-2.3-1.7-3.6-2.5z" fill="#4a5c6c"/><path d="M102.5 56.6c-3.1-6.1-9.2-10.2-16.3-10.2H75v28.8h11.2c7.1 0 13.2-4.1 16.3-10.2 3.8-7.5 1.8-16.7-4.4-22.3-.6-.5-1.1-1-1.8-1.4z" fill="#3e4c59"/></g></svg>
+        <h2>Welcome Back!</h2>
+        <p class="subtitle">Enter your mobile number to sign in and continue your learning journey.</p>
+        <div id="login-form">
+            <div class="input-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" name="mobile" placeholder="10-digit mobile number" maxlength="10"></div>
+            <div id="password-container"><div class="input-group"><label for="password">Password</label><input type="password" id="password" name="password" placeholder="Enter your password"></div></div>
+            <button type="button" class="btn-primary" id="submit-btn">Continue</button><p id="error-message" class="error-msg"></p>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
-        (function() {
+        const firebaseConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app", messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+        const loginContainer = document.getElementById('login-container');
+
+        // Main logic wrapped in an async IIFE (Immediately Invoked Function Expression)
+        (async function handleAuthFlow() {
             const userId = localStorage.getItem('loggedInUserId');
-            const userRole = localStorage.getItem('loggedInUserRole');
-            if (userId && userRole) {
-                const isAllowed = localStorage.getItem('loggedInUserIsAllowed') === 'true';
+
+            // If no user is stored, just show the login form and stop.
+            if (!userId) {
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => loadingOverlay.style.display = 'none', 300); // Hide loader
+                loginContainer.style.display = 'block'; // Show form
+                return;
+            }
+
+            // --- SESSION REVALIDATION ---
+            // If a user ID is found, re-check their data with Firestore.
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+
+                if (!userDoc.exists) {
+                    // This happens if the user was deleted by an admin.
+                    throw new Error("User not found.");
+                }
+
+                const userData = userDoc.data();
+                
+                // Update localStorage with the fresh data from the database
+                localStorage.setItem('loggedInUserRole', userData.role);
+                localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
+                
+                // Now, redirect using the FRESH data
+                const isAllowed = userData.isAllowed;
                 let redirectUrl = 'https://nokia.com';
-                switch (userRole) {
+                switch (userData.role) {
                     case 'Student': redirectUrl = isAllowed ? 'https://tv.apple.com' : 'https://nokia.com'; break;
                     case 'Teacher': redirectUrl = 'https://apple.com'; break;
                     case 'Admin': redirectUrl = '3.html'; break;
                 }
                 window.location.replace(redirectUrl);
+
+            } catch (error) {
+                // If anything fails (user deleted, network error), clear the bad session and show the login form.
+                console.error("Session revalidation failed:", error);
+                localStorage.clear();
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => loadingOverlay.style.display = 'none', 300);
+                loginContainer.style.display = 'block';
             }
         })();
-    </script>
-</head>
-<body>
 
-    <div class="main-container" id="login-container">
-        <!-- SVG Illustration -->
-        <svg class="illustration" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
-            <g>
-                <path d="M75 131.8c-20.4 0-39-9.5-51.1-25.5 12.3-15.8 31-25.6 51.1-25.6s38.8 9.8 51.1 25.6c-12.1 16-30.7 25.5-51.1 25.5z" fill="#34c1a5"/>
-                <path d="M75 18.2c-15.6 0-28.2 12.6-28.2 28.2s12.6 28.2 28.2 28.2 28.2-12.6 28.2-28.2-12.6-28.2-28.2-28.2z" fill="#ffc157"/>
-                <path d="M103.2 46.4c0 15.6-12.6 28.2-28.2 28.2V18.2c15.6 0 28.2 12.6 28.2 28.2z" fill="#ffab2f"/>
-                <path d="M103.2 106.3c-12.3-15.8-31-25.6-51.1-25.6v51.1C72.5 131.8 90.9 122.3 103.2 106.3z" fill="#2ca98e"/>
-                <path d="M102.5 56.6c-3.1-6.1-9.2-10.2-16.3-10.2H63.8c-10.3 0-18.6 8.3-18.6 18.6v.2c0 10.2 8.3 18.4 18.6 18.4h22.4c7.1 0 13.2-4.1 16.3-10.2 3.8-7.5 1.8-16.7-4.4-22.3-1.1-.9-2.3-1.7-3.6-2.5z" fill="#4a5c6c"/>
-                <path d="M102.5 56.6c-3.1-6.1-9.2-10.2-16.3-10.2H75v28.8h11.2c7.1 0 13.2-4.1 16.3-10.2 3.8-7.5 1.8-16.7-4.4-22.3-.6-.5-1.1-1-1.8-1.4z" fill="#3e4c59"/>
-            </g>
-        </svg>
-
-        <h2>Welcome Back!</h2>
-        <p class="subtitle">Enter your mobile number to sign in and continue your learning journey.</p>
-
-        <div id="login-form">
-            <div class="input-group">
-                <label for="mobile">Mobile Number</label>
-                <input type="tel" id="mobile" name="mobile" placeholder="10-digit mobile number" maxlength="10">
-            </div>
-            
-            <div id="password-container">
-                <div class="input-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password">
-                </div>
-            </div>
-
-            <button type="button" class="btn-primary" id="submit-btn">Continue</button>
-            <p id="error-message" class="error-msg"></p>
-        </div>
-    </div>
-
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
-    <!-- Main Logic Script -->
-    <script>
-        // --- This script only runs if the user was NOT redirected ---
-        document.getElementById('login-container').style.display = 'block';
-
-        const firebaseConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app", messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085" };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
+        // --- The original login form logic only runs if the above flow doesn't redirect ---
         const mobileInput = document.getElementById('mobile');
         const passwordContainer = document.getElementById('password-container');
         const passwordInput = document.getElementById('password');
         const submitBtn = document.getElementById('submit-btn');
         const errorMessage = document.getElementById('error-message');
-
+        
         let isLoginState = false;
         let userData = null;
 
-        submitBtn.addEventListener('click', async () => {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Verifying...';
-            errorMessage.textContent = '';
-            const mobileNumber = mobileInput.value.trim();
-
-            if (!/^\d{10}$/.test(mobileNumber)) {
-                errorMessage.textContent = 'Please enter a valid 10-digit mobile number.';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Continue';
-                return;
-            }
-
+        submitBtn.addEventListener('click', async () => { /* ... This logic remains the same ... */ 
+            submitBtn.disabled = true; submitBtn.textContent = 'Verifying...'; errorMessage.textContent = ''; const mobileNumber = mobileInput.value.trim();
+            if (!/^\d{10}$/.test(mobileNumber)) { errorMessage.textContent = 'Please enter a valid 10-digit mobile number.'; submitBtn.disabled = false; submitBtn.textContent = 'Continue'; return; }
             if (!isLoginState) {
                 try {
                     const snapshot = await db.collection('users').where('mobileNumber', '==', mobileNumber).get();
-                    if (snapshot.empty) {
-                        localStorage.setItem('mobileForSignup', mobileNumber);
-                        window.location.href = '2.html';
-                    } else {
-                        snapshot.forEach(doc => { userData = { id: doc.id, ...doc.data() }; });
-                        isLoginState = true;
-                        mobileInput.disabled = true;
-                        passwordContainer.style.display = 'block';
-                        passwordInput.focus();
-                        submitBtn.textContent = 'Sign In';
+                    if (snapshot.empty) { localStorage.setItem('mobileForSignup', mobileNumber); window.location.href = '2.html'; } else {
+                        snapshot.forEach(doc => { userData = { id: doc.id, ...doc.data() }; }); isLoginState = true; mobileInput.disabled = true; passwordContainer.style.display = 'block'; passwordInput.focus(); submitBtn.textContent = 'Sign In';
                     }
-                } catch (error) {
-                    console.error("Error checking user:", error);
-                    errorMessage.textContent = 'An error occurred. Please try again.';
-                    submitBtn.textContent = 'Continue';
-                }
+                } catch (error) { console.error("Error checking user:", error); errorMessage.textContent = 'An error occurred. Please try again.'; submitBtn.textContent = 'Continue'; }
             } else {
                 const password = passwordInput.value;
-                if (!password) {
-                    errorMessage.textContent = 'Password is required.';
-                } else if (userData && userData.password === password) {
-                    localStorage.setItem('loggedInUserId', userData.id);
-                    localStorage.setItem('loggedInUserRole', userData.role);
-                    localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
-                    const isAllowed = userData.isAllowed;
-                    let redirectUrl = 'https://nokia.com';
+                if (!password) { errorMessage.textContent = 'Password is required.'; } else if (userData && userData.password === password) {
+                    localStorage.setItem('loggedInUserId', userData.id); localStorage.setItem('loggedInUserRole', userData.role); localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
+                    const isAllowed = userData.isAllowed; let redirectUrl = 'https://nokia.com';
                     switch (userData.role) {
                         case 'Student': redirectUrl = isAllowed ? 'https://tv.apple.com' : 'https://nokia.com'; break;
                         case 'Teacher': redirectUrl = 'https://apple.com'; break;
                         case 'Admin': redirectUrl = '3.html'; break;
                     }
-                    window.location.replace(redirectUrl);
-                    return;
-                } else {
-                    errorMessage.textContent = 'Incorrect password. Please try again.';
-                }
+                    window.location.replace(redirectUrl); return;
+                } else { errorMessage.textContent = 'Incorrect password. Please try again.'; }
                 submitBtn.textContent = 'Sign In';
             }
             submitBtn.disabled = false;
         });
     </script>
+
 </body>
 </html>
