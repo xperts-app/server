@@ -50,11 +50,8 @@
                 <option value="8">8th</option>
                 <option value="9">9th</option>
                 <option value="10">10th</option>
-                <!-- FIX #1: The value is now just the class number -->
-                <option value="11">11th NEET</option>
-                <option value="11">11th JEE</option>
-                <option value="12">12th NEET</option>
-                <option value="12">12th JEE</option>
+                <option value="11">11th</option>
+                <option value="12">12th</option>
             </select>
         </div>
 
@@ -78,7 +75,7 @@
         const saveBtn = document.getElementById('save-attendance-btn');
 
         classSelect.addEventListener('change', async (e) => {
-            const selectedClass = e.target.value; // This will now be "6", "11", "12", etc.
+            const selectedClass = e.target.value;
             studentListContainer.innerHTML = '';
             saveBtn.style.display = 'none';
             
@@ -89,22 +86,22 @@
             studentListContainer.innerHTML = '<p class="placeholder-text">Loading students...</p>';
 
             try {
-                // FIX #2: The query is now simple and only uses the 'class' field.
+                // This simple query works perfectly with the new dropdown
                 const query = db.collection('users')
-                    .where('class', '==', selectedClass) // Looks for class: "11", "12", etc.
+                    .where('class', '==', selectedClass)
                     .where('role', '==', 'Student');
                 
                 const snapshot = await query.get();
 
                 if (snapshot.empty) {
-                    studentListContainer.innerHTML = '<p class="placeholder-text">No students found for this class. Please ensure student data is correct.</p>';
+                    studentListContainer.innerHTML = '<p class="placeholder-text">No students found for this class.</p>';
                     return;
                 }
 
                 studentListContainer.innerHTML = '';
                 const students = [];
                 snapshot.forEach(doc => students.push({ id: doc.id, ...doc.data() }));
-                students.sort((a,b) => a.fullName.localeCompare(b.fullName)); // Sort alphabetically
+                students.sort((a,b) => a.fullName.localeCompare(b.fullName));
 
                 students.forEach(student => {
                     const row = document.createElement('div');
