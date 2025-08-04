@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - ALLEN Digital</title>
+    
+    <!-- Google Fonts for better typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-blue: #0066ff;
+            --light-blue: #e7f1ff;
+            --background-color: #f0f4f9;
+            --text-dark: #1d2c3c;
+            --text-light: #5a6b7d;
+            --border-color: #dbe2ea;
+            --error-red: #dc3545;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* The main container is hidden by default to prevent flashing on redirect */
+        .login-container {
+            display: none;
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-sizing: border-box;
+        }
+
+        .icon-container {
+            width: 60px;
+            height: 60px;
+            background-color: var(--light-blue);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 20px auto;
+        }
+
+        .icon-container svg {
+            width: 30px;
+            height: 30px;
+            stroke: var(--primary-blue);
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin: 0 0 10px 0;
+        }
+
+        p {
+            color: var(--text-light);
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-sizing: border-box;
+            font-size: 16px;
+            font-family: 'Poppins', sans-serif;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px var(--light-blue);
+        }
+
+        .btn {
+            background-color: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 15px 0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0052cc;
+        }
+
+        .btn:disabled {
+            background-color: #a0cffd;
+            cursor: not-allowed;
+        }
+
+        #password-container {
+            display: none;
+        }
+
+        .error-msg {
+            color: var(--error-red);
+            font-weight: 500;
+            margin-top: 15px;
+            min-height: 1.2em;
+        }
+    </style>
+
+    <!-- === INSTANT REDIRECT SCRIPT === -->
+    <!-- This runs before the body renders to prevent any flash of content -->
+    <script>
+        (function() {
+            const userId = localStorage.getItem('loggedInUserId');
+            const userRole = localStorage.getItem('loggedInUserRole');
+
+            if (userId && userRole) {
+                const isAllowed = localStorage.getItem('loggedInUserIsAllowed') === 'true';
+                let redirectUrl = 'https://nokia.com'; // Default fallback
+
+                switch (userRole) {
+                    case 'Student':
+                        redirectUrl = isAllowed ? 'https://tv.apple.com' : 'https://nokia.com';
+                        break;
+                    case 'Teacher':
+                        redirectUrl = 'https://apple.com';
+                        break;
+                    case 'Admin':
+                        redirectUrl = '3.html';
+                        break;
+                }
+                // Use replace() to avoid the login page being in the browser history
+                window.location.replace(redirectUrl);
+            }
+        })();
+    </script>
+</head>
+<body>
+
+    <div class="login-container" id="login-container">
+        <div class="icon-container">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+        </div>
+        <h1>Welcome Back!</h1>
+        <p>Enter your details to sign in to your account.</p>
+
+        <div id="login-form">
+            <div class="input-group">
+                <label for="mobile">Mobile Number</label>
+                <input type="tel" id="mobile" name="mobile" placeholder="Enter your 10-digit mobile number" maxlength="10">
+            </div>
+            
+            <div id="password-container">
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password">
+                </div>
+            </div>
+
+            <button type="button" class="btn" id="submit-btn">Continue</button>
+            <p id="error-message" class="error-msg"></p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (loaded after the main content) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // --- This script only runs if the user was NOT redirected ---
+        
+        // Show the login form now that we know we need it
+        document.getElementById('login-container').style.display = 'block';
+
+        const firebaseConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app", messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085", measurementId: "G-6TS06NTDZQ" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const mobileInput = document.getElementById('mobile');
+        const passwordContainer = document.getElementById('password-container');
+        const passwordInput = document.getElementById('password');
+        const submitBtn = document.getElementById('submit-btn');
+        const errorMessage = document.getElementById('error-message');
+
+        let isLoginState = false;
+        let userData = null;
+
+        submitBtn.addEventListener('click', async () => {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Verifying...';
+            errorMessage.textContent = '';
+            const mobileNumber = mobileInput.value.trim();
+
+            if (!/^\d{10}$/.test(mobileNumber)) {
+                errorMessage.textContent = 'Please enter a valid 10-digit mobile number.';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Continue';
+                return;
+            }
+
+            if (!isLoginState) {
+                try {
+                    const snapshot = await db.collection('users').where('mobileNumber', '==', mobileNumber).get();
+                    
+                    if (snapshot.empty) {
+                        localStorage.setItem('mobileForSignup', mobileNumber);
+                        window.location.href = '2.html';
+                    } else {
+                        snapshot.forEach(doc => { userData = { id: doc.id, ...doc.data() }; });
+                        isLoginState = true;
+                        mobileInput.disabled = true;
+                        passwordContainer.style.display = 'block';
+                        passwordInput.focus();
+                        submitBtn.textContent = 'Login';
+                    }
+                } catch (error) {
+                    console.error("Error checking user:", error);
+                    errorMessage.textContent = 'An error occurred. Please try again.';
+                    submitBtn.textContent = 'Continue';
+                }
+            } else {
+                const password = passwordInput.value;
+                if (!password) {
+                    errorMessage.textContent = 'Password is required.';
+                } else if (userData && userData.password === password) {
+                    // Login successful, save session to localStorage for next time
+                    localStorage.setItem('loggedInUserId', userData.id);
+                    localStorage.setItem('loggedInUserRole', userData.role);
+                    localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
+
+                    // Redirect immediately after setting storage
+                    const isAllowed = userData.isAllowed;
+                    let redirectUrl = 'https://nokia.com';
+                    switch (userData.role) {
+                        case 'Student': redirectUrl = isAllowed ? 'https://tv.apple.com' : 'https://nokia.com'; break;
+                        case 'Teacher': redirectUrl = 'https://apple.com'; break;
+                        case 'Admin': redirectUrl = '3.html'; break;
+                    }
+                    window.location.replace(redirectUrl);
+                    return; // Stop further execution
+                } else {
+                    errorMessage.textContent = 'Incorrect password. Please try again.';
+                }
+                submitBtn.textContent = 'Login';
+            }
+            submitBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
