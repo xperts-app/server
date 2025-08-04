@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Test Length</title>
+    <style>
+        :root {
+            --primary-text: #1a1a1a;
+            --secondary-text: #6c757d;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --accent-color: #007bff;
+            --disabled-color: #d1d5db;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+            padding: 0;
+            font-size: 16px;
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            max-width: 600px;
+            margin: auto;
+            background-color: var(--card-bg);
+        }
+
+        /* --- Header --- */
+        .header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .back-arrow {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--primary-text);
+            text-decoration: none;
+        }
+        .progress-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .progress-indicator {
+            width: 120px;
+            height: 4px;
+            background-color: var(--border-color);
+            border-radius: 2px;
+            position: relative;
+        }
+        /* Step 2/2: Full width */
+        .progress-indicator::before {
+            content: '';
+            position: absolute;
+            height: 100%;
+            width: 100%;
+            background-color: var(--primary-text);
+            border-radius: 2px;
+        }
+        .progress-step {
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+        
+        /* --- Main Content --- */
+        .main-content {
+            flex-grow: 1;
+            padding: 40px 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .main-content h1 {
+            color: var(--primary-text);
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        #chapterInfo {
+            font-size: 1.1em;
+            color: var(--secondary-text);
+            margin-bottom: 40px;
+            font-weight: 500;
+            line-height: 1.5;
+        }
+        #chapterInfo strong {
+            display: block;
+            color: var(--primary-text);
+            margin-bottom: 5px;
+        }
+
+        .presets {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .preset-btn {
+            background-color: var(--border-color);
+            color: #495057;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            background-color: #d8dde2;
+        }
+        
+        .custom-input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        #questionCountInput {
+            width: 100%;
+            max-width: 200px;
+            padding: 15px;
+            font-size: 2.5em;
+            text-align: center;
+            font-weight: bold;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            box-sizing: border-box;
+            margin: 0 auto 30px auto;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #questionCountInput:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+        
+        #questionCountInput::-webkit-outer-spin-button,
+        #questionCountInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        #questionCountInput[type=number] { -moz-appearance: textfield; }
+
+        /* --- Footer --- */
+        .footer {
+            padding: 20px;
+            background-color: var(--card-bg);
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        }
+        .start-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .start-btn:disabled {
+            background-color: var(--disabled-color);
+            color: var(--secondary-text);
+            cursor: not-allowed;
+        }
+        .start-btn:not(:disabled) {
+            background-color: var(--primary-text);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <header class="header">
+            <a href="#" class="back-arrow" onclick="history.back(); return false;">←</a>
+            <div class="progress-bar">
+                <div class="progress-indicator"></div>
+                <span class="progress-step">2/2</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <h1>Set Test Length</h1>
+            <p id="chapterInfo">Loading details...</p>
+
+            <div class="presets">
+                <button class="preset-btn" data-count="10">10</button>
+                <button class="preset-btn" data-count="40">40</button>
+                <button class="preset-btn" data-count="60">60</button>
+                <button class="preset-btn" data-count="100">100</button>
+            </div>
+
+            <div class="custom-input-group">
+                <label for="questionCountInput">Enter number of questions</label>
+                <input type="number" id="questionCountInput" min="1" max="200" placeholder="25">
+            </div>
+        </main>
+
+        <footer class="footer">
+            <button id="startBtn" class="start-btn" disabled>Start Test</button>
+        </footer>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIG ---
+            const MIN_QUESTIONS = 1;
+            const MAX_QUESTIONS = 200;
+
+            // --- DOM ELEMENTS ---
+            const chapterInfo = document.getElementById('chapterInfo');
+            const questionCountInput = document.getElementById('questionCountInput');
+            const startBtn = document.getElementById('startBtn');
+            const presetBtns = document.querySelectorAll('.preset-btn');
+            
+            // --- GET URL PARAMS ---
+            const urlParams = new URLSearchParams(window.location.search);
+            const className = urlParams.get('class');
+            const subjectName = urlParams.get('subject');
+            const chapterNamesParam = urlParams.get('chapter'); // This is already encoded
+
+            // --- VALIDATE PARAMS & INITIALIZE ---
+            if (!className || !subjectName || !chapterNamesParam) {
+                chapterInfo.textContent = 'Error: Missing Test Details.';
+                chapterInfo.style.color = '#dc3545';
+                return;
+            }
+
+            // Decode chapter names for display purposes
+            const decodedChapters = decodeURIComponent(chapterNamesParam).split(',');
+            const subjectDisplay = decodeURIComponent(subjectName);
+            
+            // Display selected chapters neatly
+            let chapterDisplayText = `<strong>Selected Chapter${decodedChapters.length > 1 ? 's' : ''}</strong>`;
+            chapterDisplayText += decodedChapters.join(', ');
+            chapterInfo.innerHTML = chapterDisplayText;
+
+            // --- EVENT LISTENERS ---
+            presetBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    questionCountInput.value = btn.dataset.count;
+                    questionCountInput.dispatchEvent(new Event('input'));
+                });
+            });
+
+            questionCountInput.addEventListener('input', () => {
+                const count = parseInt(questionCountInput.value, 10);
+                if (count >= MIN_QUESTIONS && count <= MAX_QUESTIONS) {
+                    startBtn.disabled = false;
+                } else {
+                    startBtn.disabled = true;
+                }
+            });
+
+            startBtn.addEventListener('click', () => {
+                const count = questionCountInput.value;
+                if (!count || startBtn.disabled) return;
+
+                // We don't need to re-encode the params, just pass them along
+                const destinationUrl = `question.html?class=${className}&subject=${subjectName}&chapter=${chapterNamesParam}&count=${count}`;
+                window.location.href = destinationUrl;
+            });
+        });
+    </script>
+</body>
+</html>
