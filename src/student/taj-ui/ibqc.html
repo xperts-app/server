@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter Review</title>
+    <style>
+        :root {
+            --primary-text: #1a1a1a; --secondary-text: #6c757d; --accent-color: #007bff;
+            --bg-color: #f0f2f5; --card-bg: #ffffff; --border-color: #e9ecef;
+            --correct-bg: #d4edda; --correct-border: #28a745;
+        }
+        body { font-family: system-ui, sans-serif; background-color: var(--bg-color); color: var(--primary-text); margin: 0; }
+        .header { background-color: var(--card-bg); padding: 15px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid var(--border-color); }
+        .back-arrow { font-size: 24px; cursor: pointer; color: var(--primary-text); text-decoration: none; }
+        .header h1 { font-size: 22px; margin: 0; }
+        .review-container { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .question-card { background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 20px; }
+        .question-card h3 { margin-top: 0; }
+        .question-image { max-width: 100%; border-radius: 8px; margin-bottom: 20px; }
+        .option { padding: 10px; border-radius: 8px; margin-bottom: 8px; background: #f8f9fa; }
+        .option.correct { font-weight: bold; background-color: var(--correct-bg); border: 1px solid var(--correct-border); }
+        .detailed-solution { margin-top: 20px; padding: 15px; background-color: #e9ecef; border-left: 4px solid var(--accent-color); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="#" class="back-arrow" onclick="history.back(); return false;">←</a>
+        <h1 id="headerTitle">Chapter Review</h1>
+    </header>
+    <main class="review-container" id="reviewContainer"></main>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.getElementById('reviewContainer');
+            const headerTitle = document.getElementById('headerTitle');
+            const reviewDataJSON = sessionStorage.getItem('chapterReviewSession');
+            
+            if (!reviewDataJSON) {
+                container.innerHTML = '<p>Error: No review data found.</p>';
+                return;
+            }
+
+            const { chapterName, questions } = JSON.parse(reviewDataJSON);
+            headerTitle.textContent = `Review: ${chapterName}`;
+            
+            questions.forEach((q, index) => {
+                const optionsHTML = q.options.map((opt, i) => `
+                    <div class="option ${i === q.correctAnswerIndex ? 'correct' : ''}">
+                        ${i+1}. ${opt.text || ''}
+                        ${opt.imageUrl ? `<img src="${opt.imageUrl}" style="max-width:150px; margin-top:5px;">` : ''}
+                    </div>`).join('');
+
+                const cardHTML = `
+                    <div class="question-card">
+                        <h3>Question ${index + 1}</h3>
+                        <p>${q.questionText.replace(/\n/g, '<br>')}</p>
+                        ${q.questionImageUrl ? `<img src="${q.questionImageUrl}" class="question-image">` : ''}
+                        <hr style="border-style:dashed; margin: 20px 0;">
+                        ${optionsHTML}
+                        <div class="detailed-solution">
+                            <h4>Detailed Solution</h4>
+                            <p>${q.solution}</p>
+                        </div>
+                    </div>`;
+                container.innerHTML += cardHTML;
+            });
+        });
+    </script>
+</body>
+</html>
