@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - ALLEN Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary-blue:#0066ff;--background-color:#f0f4f9;--text-dark:#1d2c3c;--text-light:#5a6b7d;--border-color:#dbe2ea;--success-green:#28a745;--error-red:#dc3545}
+        body{font-family:'Poppins',sans-serif;background-color:var(--background-color);margin:0;padding-top:5vh}
+        .main-container{max-width:450px;margin:auto;padding:20px;text-align:center}
+        .illustration{width:150px;height:150px;margin:0 auto 20px auto}
+        h2{font-weight:600;font-size:28px;color:var(--text-dark);margin-bottom:12px}
+        p.subtitle{color:var(--text-light);font-size:16px;margin-bottom:40px}
+        form{text-align:left}
+        .input-group{margin-bottom:20px}
+        label{display:block;margin-bottom:8px;font-weight:500;font-size:14px;color:var(--text-dark)}
+        input{width:100%;padding:15px;border:1px solid var(--border-color);border-radius:12px;font-size:16px;box-sizing:border-box;font-family:'Poppins',sans-serif;transition:all .3s}
+        input:focus{outline:0;border-color:var(--primary-blue);box-shadow:0 0 0 4px rgba(0,102,255,.1)}
+        .btn-primary{background-color:var(--primary-blue);color:#fff;border:none;padding:16px 0;border-radius:12px;font-size:18px;font-weight:600;width:100%;cursor:pointer;transition:all .3s;margin-top:10px}
+        .btn-primary:disabled{background-color:#a0cffd;cursor:not-allowed}
+        #form-message{text-align:center;font-weight:500;margin-top:20px;min-height:1.2em}
+        .success{color:var(--success-green)}
+        .error{color:var(--error-red)}
+        .back-link{display:inline-block;margin-top:20px;color:var(--text-light);text-decoration:none;font-weight:500}
+        .back-link:hover{color:var(--primary-blue)}
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- SVG Illustration -->
+        <svg class="illustration" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#333" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
+        
+        <h2>Edit Your Profile</h2>
+        <p class="subtitle">Update your name or change your password here.</p>
+        
+        <form id="edit-form">
+            <div class="input-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" required>
+            </div>
+            <div class="input-group">
+                <label for="newPassword">New Password (optional)</label>
+                <input type="password" id="newPassword" placeholder="Leave blank to keep current password">
+            </div>
+            <div class="input-group">
+                <label for="confirmPassword">Confirm New Password</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm your new password">
+            </div>
+            
+            <button type="submit" class="btn-primary" id="submit-btn">Save Changes</button>
+            <p id="form-message"></p>
+        </form>
+        <a href="4.html" class="back-link">← Back to Profile</a>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app", messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const form = document.getElementById('edit-form');
+        const fullNameInput = document.getElementById('fullName');
+        const newPasswordInput = document.getElementById('newPassword');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const formMessage = document.getElementById('form-message');
+        const submitBtn = document.getElementById('submit-btn');
+        let userId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            userId = localStorage.getItem('loggedInUserId');
+            if (!userId) {
+                alert("You must be logged in to edit your profile.");
+                window.location.href = '1.html';
+                return;
+            }
+
+            // Pre-fill the form with the user's current full name
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) {
+                    fullNameInput.value = userDoc.data().fullName || '';
+                } else {
+                    alert('User not found. Logging out.');
+                    localStorage.clear();
+                    window.location.href = '1.html';
+                }
+            } catch (error) {
+                formMessage.textContent = "Could not load your profile.";
+                formMessage.className = 'error';
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            formMessage.textContent = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+            
+            const newFullName = fullNameInput.value.trim();
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (newPassword && newPassword !== confirmPassword) {
+                formMessage.textContent = 'Passwords do not match.';
+                formMessage.className = 'error';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Changes';
+                return;
+            }
+
+            const dataToUpdate = { fullName: newFullName };
+            if (newPassword) {
+                dataToUpdate.password = newPassword;
+            }
+            
+            try {
+                await db.collection('users').doc(userId).update(dataToUpdate);
+                formMessage.textContent = 'Profile updated successfully!';
+                formMessage.className = 'success';
+                
+                // Clear password fields after success
+                newPasswordInput.value = '';
+                confirmPasswordInput.value = '';
+                
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                formMessage.textContent = 'Failed to update profile. Please try again.';
+                formMessage.className = 'error';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Changes';
+            }
+        });
+    </script>
+</body>
+</html>
