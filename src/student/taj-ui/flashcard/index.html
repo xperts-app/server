@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select a Chapter</title>
+    <style>
+        :root {
+            --primary-color: #4a6cf7;
+            --background-color: #f7f9fc;
+            --card-background: #ffffff;
+            --text-color: #212529;
+            --text-light: #6c757d;
+            --border-color: #e5e7eb;
+            --selected-bg: #eef2ff;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .page-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .header {
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .content-wrapper {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #chapter-form {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        #chapter-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background-color: var(--card-background);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        #chapter-list li {
+            border-bottom: 1px solid var(--border-color);
+        }
+        #chapter-list li:last-child {
+            border-bottom: none;
+        }
+
+        #chapter-list input[type="radio"] {
+            display: none; /* Hide the actual radio button */
+        }
+
+        #chapter-list label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            cursor: pointer;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .chapter-name {
+            font-weight: 500;
+        }
+
+        .arrow-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--text-light);
+            transition: transform 0.3s, fill 0.2s;
+        }
+        
+        /* --- Selection State --- */
+        #chapter-list input[type="radio"]:checked + label {
+            background-color: var(--selected-bg);
+            color: var(--primary-color);
+        }
+        #chapter-list input[type="radio"]:checked + label .arrow-icon svg {
+            transform: rotate(180deg);
+            fill: var(--primary-color);
+        }
+        
+        .footer {
+            padding: 20px;
+            background-color: var(--background-color);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        #next-btn {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            display: block;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        #next-btn:disabled {
+            background-color: #e5e7eb;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        #next-btn:not(:disabled) {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .loading-text {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <header class="header">
+            <h1 id="page-title">Select a Chapter</h1>
+        </header>
+
+        <main class="content-wrapper">
+            <form id="chapter-form">
+                <ul id="chapter-list">
+                    <p class="loading-text">Loading chapters...</p>
+                </ul>
+            </form>
+        </main>
+
+        <footer class="footer">
+            <button id="next-btn" disabled>Next</button>
+        </footer>
+    </div>
+
+
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4Fc3IhMFVz4v6mKc4tcc_yjaEIw4fbo4",
+            authDomain: "xperts-flashcards.firebaseapp.com",
+            projectId: "xperts-flashcards",
+            storageBucket: "xperts-flashcards.appspot.com",
+            messagingSenderId: "398115589486",
+            appId: "1:398115589486:web:3c513f5624686edd36c57f",
+            measurementId: "G-RYEDY563LR"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- Start of Application Logic ---
+        const chapterList = document.getElementById('chapter-list');
+        const pageTitle = document.getElementById('page-title');
+        const nextBtn = document.getElementById('next-btn');
+        const chapterForm = document.getElementById('chapter-form');
+
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const className = params.get('class');
+            const subjectName = params.get('subject');
+
+            if (!className || !subjectName) {
+                chapterList.innerHTML = `<p class="loading-text">Error: Please specify class and subject in the URL. <br><br>Example: <b>?class=10&subject=BIO</b></p>`;
+                return;
+            }
+
+            pageTitle.textContent = `${className} - ${subjectName}`;
+
+            const q = query(collection(db, "chapters"), where("class", "==", className), where("subject", "==", subjectName));
+            
+            try {
+                const querySnapshot = await getDocs(q);
+                chapterList.innerHTML = ''; // Clear loading message
+
+                if (querySnapshot.empty) {
+                    chapterList.innerHTML = '<p class="loading-text">No chapters found for this class and subject.</p>';
+                } else {
+                    querySnapshot.forEach((doc) => {
+                        const chapter = doc.data();
+                        const chapterId = doc.id;
+                        
+                        const li = document.createElement('li');
+                        
+                        // Create a unique ID for the radio and label
+                        const inputId = `chapter-${chapterId}`;
+                        
+                        li.innerHTML = `
+                            <input type="radio" id="${inputId}" name="chapter" value="${chapterId}">
+                            <label for="${inputId}">
+                                <span class="chapter-name">${chapter.chapterName}</span>
+                                <span class="arrow-icon">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
+                                </span>
+                            </label>
+                        `;
+                        chapterList.appendChild(li);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching chapters: ", error);
+                chapterList.innerHTML = `<p class="loading-text">Error fetching chapters. You may need to create a Firestore index. Check the browser console for a link.</p>`;
+            }
+        };
+
+        // Enable the "Next" button when a chapter is selected
+        chapterForm.addEventListener('change', () => {
+            nextBtn.disabled = false;
+        });
+
+        // Handle form submission to go to the next page
+        chapterForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // Prevent default form submission
+            const selectedChapter = document.querySelector('input[name="chapter"]:checked');
+            if (selectedChapter) {
+                const chapterId = selectedChapter.value;
+                window.location.href = `3.html?chapterId=${chapterId}`;
+            }
+        });
+        
+        // The form is submitted when the enabled Next button is clicked
+        nextBtn.addEventListener('click', () => {
+            chapterForm.requestSubmit();
+        });
+    </script>
+</body>
+</html>
