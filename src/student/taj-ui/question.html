@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice Test</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .test-container { max-width: 900px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 20px; }
+        .question-counter, .timer { font-size: 1.2em; font-weight: bold; color: #0056b3; }
+        .question-area { margin-bottom: 25px; }
+        .question-text { font-size: 1.3em; margin-bottom: 15px; }
+        .question-image { max-width: 100%; height: auto; border-radius: 5px; margin-bottom: 15px; }
+        .options-area { display: flex; flex-direction: column; gap: 10px; }
+        .option { display: flex; align-items: center; padding: 15px; border: 1px solid #ccc; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+        .option:hover { background-color: #e9ecef; }
+        .option input[type="radio"] { margin-right: 15px; }
+        .option-content img { max-width: 200px; height: auto; display: block; margin-top: 5px; }
+        .navigation-area { text-align: right; }
+        .btn { background-color: #007bff; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background-color: #0056b3; }
+        .loader { text-align: center; font-size: 1.5em; padding: 50px; }
+    </style>
+</head>
+<body>
+    <div id="loader" class="loader">Loading Test...</div>
+    <div id="testContainer" class="test-container" style="display: none;">
+        <div class="test-header">
+            <div id="questionCounter" class="question-counter"></div>
+            <div id="timer" class="timer">Time: 00:00</div>
+        </div>
+        <div class="question-area">
+            <p id="questionText" class="question-text"></p>
+            <img id="questionImage" class="question-image" src="" alt="" style="display: none;">
+        </div>
+        <div id="optionsArea" class="options-area"></div>
+        <div class="navigation-area">
+            <button id="nextBtn" class="btn">Next</button>
+        </div>
+    </div>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyBrdCOyTrQ_uU4jID8hWzCQzaXilhAcGcs",
+          authDomain: "custom-practices.firebaseapp.com",
+          projectId: "custom-practices",
+          storageBucket: "custom-practices.firebasestorage.app",
+          messagingSenderId: "636700937539",
+          appId: "1:636700937539:web:d6ec9d88453e15481d33f6",
+          measurementId: "G-JL58DMTZ0W"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let testQuestions = [];
+        let userAnswers = [];
+        let currentQuestionIndex = 0;
+        let startTime;
+        let timerInterval;
+
+        const loader = document.getElementById('loader');
+        const testContainer = document.getElementById('testContainer');
+        const questionCounter = document.getElementById('questionCounter');
+        const timerEl = document.getElementById('timer');
+        const questionText = document.getElementById('questionText');
+        const questionImage = document.getElementById('questionImage');
+        const optionsArea = document.getElementById('optionsArea');
+        const nextBtn = document.getElementById('nextBtn');
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const source = urlParams.get('source');
+
+            if (source === 'improvement') {
+                // --- RE-ATTEMPT MODE ---
+                const sessionDataJSON = sessionStorage.getItem('testSession');
+                if (sessionDataJSON) {
+                    const sessionData = JSON.parse(sessionDataJSON);
+                    testQuestions = sessionData.questions;
+                    if (testQuestions && testQuestions.length > 0) {
+                        startTest();
+                    } else {
+                        loader.textContent = "Error: No questions found in the re-attempt session.";
+                    }
+                } else {
+                    loader.textContent = "Error: Could not find re-attempt session data.";
+                }
+            } else {
+                // --- NORMAL MODE ---
+                const className = urlParams.get('class');
+                const subjectName = urlParams.get('subject');
+                const chapterNamesParam = urlParams.get('chapter');
+                const count = parseInt(urlParams.get('count'), 10);
+                if (!className || !subjectName || !chapterNamesParam || !count) {
+                    loader.textContent = "Error: Test parameters are missing.";
+                    return;
+                }
+                const chapterArray = decodeURIComponent(chapterNamesParam).split(',');
+                await fetchQuestions(className, subjectName, chapterArray, count);
+            }
+        });
+
+        async function fetchQuestions(className, subjectName, chapterArray, count) {
+            try {
+                const snapshot = await db.collection('questions')
+                    .where('class', '==', className)
+                    .where('subject', '==', subjectName)
+                    .where('chapter', 'in', chapterArray)
+                    .get();
+                if (snapshot.empty) {
+                    loader.textContent = "No questions found for the selected chapters.";
+                    return;
+                }
+                let allQuestions = [];
+                snapshot.forEach(doc => allQuestions.push({ id: doc.id, ...doc.data() }));
+                
+                allQuestions.sort(() => 0.5 - Math.random());
+                testQuestions = allQuestions.slice(0, count);
+
+                if (testQuestions.length === 0) {
+                     loader.textContent = "Not enough questions found to start the test.";
+                     return;
+                }
+                startTest();
+            } catch (error) {
+                console.error("Error fetching questions:", error);
+                loader.textContent = "Failed to load test. Please try again.";
+            }
+        }
+
+        function startTest() {
+            userAnswers = new Array(testQuestions.length).fill(-1);
+            startTime = new Date();
+            loader.style.display = 'none';
+            testContainer.style.display = 'block';
+            startTimer();
+            renderQuestion(currentQuestionIndex);
+        }
+
+        function renderQuestion(index) {
+            const q = testQuestions[index];
+            questionCounter.textContent = `Question ${index + 1} of ${testQuestions.length}`;
+            questionText.textContent = q.questionText || '';
+            if (q.questionImageUrl) {
+                questionImage.src = q.questionImageUrl;
+                questionImage.style.display = 'block';
+            } else {
+                questionImage.style.display = 'none';
+            }
+            optionsArea.innerHTML = '';
+            q.options.forEach((opt, i) => {
+                const optionId = `option${i}`;
+                const optionLabel = document.createElement('label');
+                optionLabel.className = 'option';
+                optionLabel.htmlFor = optionId;
+                let optionContent = `<span class="option-text">${opt.text}</span>`;
+                if (opt.imageUrl) optionContent += `<img src="${opt.imageUrl}" alt="Option image">`;
+                optionLabel.innerHTML = `<input type="radio" name="answer" id="${optionId}" value="${i}"><div class="option-content">${optionContent}</div>`;
+                optionsArea.appendChild(optionLabel);
+            });
+            if (userAnswers[index] !== -1) document.getElementById(`option${userAnswers[index]}`).checked = true;
+            nextBtn.textContent = (index === testQuestions.length - 1) ? 'Finish Test' : 'Next';
+        }
+
+        nextBtn.addEventListener('click', () => {
+            const selectedOption = document.querySelector('input[name="answer"]:checked');
+            if (selectedOption) userAnswers[currentQuestionIndex] = parseInt(selectedOption.value, 10);
+            if (currentQuestionIndex < testQuestions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion(currentQuestionIndex);
+            } else {
+                finishTest();
+            }
+        });
+
+        function finishTest() {
+            clearInterval(timerInterval);
+            const endTime = new Date();
+            const sessionData = {
+                questions: testQuestions,
+                userAnswers: userAnswers,
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString()
+            };
+            sessionStorage.setItem('testSession', JSON.stringify(sessionData));
+            window.location.href = 'result.html';
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = Math.floor((now - startTime) / 1000);
+                const minutes = String(Math.floor(diff / 60)).padStart(2, '0');
+                const seconds = String(diff % 60).padStart(2, '0');
+                timerEl.textContent = `Time: ${minutes}:${seconds}`;
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
