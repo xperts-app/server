@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Answers</title>
+    <style>
+        :root {
+            --primary-text: #1a1a1a;
+            --secondary-text: #6c757d;
+            --accent-color: #007bff;
+            --bg-color: #f0f2f5;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            margin: 0;
+        }
+
+        /* --- Page Layout --- */
+        .page-container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 22px;
+            margin: 0;
+            text-align: center;
+        }
+        .review-content {
+            padding: 0 15px 20px 15px;
+        }
+
+        /* --- Review Card --- */
+        .review-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        .toggle-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: #f0f2f5;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            line-height: 28px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .collapsible-content {
+            /* This content will be toggled */
+            transition: all 0.3s ease;
+        }
+        .collapsible-content.collapsed {
+            display: none;
+        }
+        .card-body p {
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 0;
+        }
+        .card-body img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .separator {
+            border: 0;
+            border-top: 1px dashed var(--border-color);
+            margin: 20px 0;
+        }
+        .solution-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px;
+            text-decoration: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="page-container">
+        <header class="header">
+            <h1>Review Answers</h1>
+        </header>
+
+        <main class="review-content" id="reviewContainer">
+            <!-- Question cards will be injected here by JS -->
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const reviewContainer = document.getElementById('reviewContainer');
+            const sessionDataJSON = sessionStorage.getItem('testSession');
+            
+            if (!sessionDataJSON) {
+                reviewContainer.innerHTML = '<p style="text-align:center;">No test session found to review.</p>';
+                return;
+            }
+            const { questions } = JSON.parse(sessionDataJSON);
+
+            questions.forEach((q, index) => {
+                const reviewCard = document.createElement('div');
+                reviewCard.className = 'review-card';
+
+                let questionBodyHTML = '';
+                if (q.questionText) {
+                    questionBodyHTML += `<p>${q.questionText.replace(/\n/g, '<br>')}</p>`;
+                }
+                if (q.questionImageUrl) {
+                    questionBodyHTML += `<img src="${q.questionImageUrl}" alt="Question Image">`;
+                }
+
+                // **MODIFICATION**: Changed icon div to a button and wrapped content
+                reviewCard.innerHTML = `
+                    <div class="card-header">
+                        <span>Question ${index + 1}</span>
+                        <button class="toggle-btn">-</button>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="card-body">
+                            ${questionBodyHTML}
+                        </div>
+                        <hr class="separator">
+                        <a href="solution.html?q_index=${index}" class="solution-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 5.5C2 4.94772 2.44772 4.5 3 4.5H21C21.5523 4.5 22 4.94772 22 5.5V18.5C22 19.0523 21.5523 19.5 21 19.5H3C2.44772 19.5 2 19.0523 2 18.5V5.5Z" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M6 9.5H18" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M6 12.5H18" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M6 15.5H14" stroke="#007bff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>View solution</span>
+                        </a>
+                    </div>
+                `;
+                reviewContainer.appendChild(reviewCard);
+            });
+
+            // **NEW**: Added event listener for the toggle functionality
+            reviewContainer.addEventListener('click', (e) => {
+                // Use .closest() to find the button even if an inner part of it was clicked
+                const toggleButton = e.target.closest('.toggle-btn');
+
+                // If a toggle button wasn't clicked, do nothing
+                if (!toggleButton) return;
+
+                const card = toggleButton.closest('.review-card');
+                const content = card.querySelector('.collapsible-content');
+
+                // Toggle the 'collapsed' class on the content
+                content.classList.toggle('collapsed');
+
+                // Change the button text based on the state
+                if (content.classList.contains('collapsed')) {
+                    toggleButton.textContent = '+';
+                } else {
+                    toggleButton.textContent = '-';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
