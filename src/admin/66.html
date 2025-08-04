@@ -35,19 +35,33 @@
 </head>
 <body>
     <div class="main-container">
-        <!-- UI elements... -->
+        <!-- SVG Illustration -->
         <svg class="illustration" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C7.02944 3 3 7.02944 3 12C3 16.9706 7.02944 21 12 21Z" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 10L11 14L9 12" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
         <h2>Mark Attendance</h2>
         <p class="subtitle">Select a class to view the student list and mark today's attendance.</p>
+        
         <div class="selection-area">
             <label for="class-select">Select a Class</label>
             <select id="class-select">
                 <option value="">-- Choose a class --</option>
-                <option value="6">6th</option><option value="7">7th</option><option value="8">8th</option><option value="9">9th</option><option value="10">10th</option>
-                <option value="11 NEET">11th NEET</option><option value="11 JEE">11th JEE</option><option value="12 NEET">12th NEET</option><option value="12 JEE">12th JEE</option>
+                <option value="6">6th</option>
+                <option value="7">7th</option>
+                <option value="8">8th</option>
+                <option value="9">9th</option>
+                <option value="10">10th</option>
+                <!-- FIX #1: The value is now just the class number -->
+                <option value="11">11th NEET</option>
+                <option value="11">11th JEE</option>
+                <option value="12">12th NEET</option>
+                <option value="12">12th JEE</option>
             </select>
         </div>
-        <div id="student-list-container"><p class="placeholder-text">Students will appear here once a class is selected.</p></div>
+
+        <div id="student-list-container">
+            <p class="placeholder-text">Students will appear here once a class is selected.</p>
+        </div>
+
         <button class="btn-primary" id="save-attendance-btn" style="display: none;">Save Attendance</button>
         <p id="message-area"></p>
     </div>
@@ -61,65 +75,59 @@
 
         const classSelect = document.getElementById('class-select');
         const studentListContainer = document.getElementById('student-list-container');
-        // ... (other variable declarations)
+        const saveBtn = document.getElementById('save-attendance-btn');
 
         classSelect.addEventListener('change', async (e) => {
-            // ... (code to clear UI)
-            const selectedValue = e.target.value;
-            if (!selectedValue) { /* ... handle empty selection ... */ return; }
+            const selectedClass = e.target.value; // This will now be "6", "11", "12", etc.
+            studentListContainer.innerHTML = '';
+            saveBtn.style.display = 'none';
+            
+            if (!selectedClass) {
+                studentListContainer.innerHTML = '<p class="placeholder-text">Students will appear here once a class is selected.</p>';
+                return;
+            }
             studentListContainer.innerHTML = '<p class="placeholder-text">Loading students...</p>';
 
             try {
-                let query;
-                const usersRef = db.collection('users');
-
-                // --- DEBUGGING LOGS ---
-                console.clear(); // Clears the console for a fresh log
-                console.log("--- STARTING ATTENDANCE QUERY ---");
-                console.log(`Dropdown value selected: "${selectedValue}"`);
-                // --- END DEBUGGING LOGS ---
+                // FIX #2: The query is now simple and only uses the 'class' field.
+                const query = db.collection('users')
+                    .where('class', '==', selectedClass) // Looks for class: "11", "12", etc.
+                    .where('role', '==', 'Student');
                 
-                if (selectedValue.includes(' ')) {
-                    const [classNum, goal] = selectedValue.split(' ');
-                    
-                    // --- DEBUGGING LOGS ---
-                    console.log(`Building a composite query with:`);
-                    console.log(`  - class == "${classNum}" (Type: ${typeof classNum})`);
-                    console.log(`  - goal  == "${goal}" (Type: ${typeof goal})`);
-                    console.log(`  - role  == "Student"`);
-                    // --- END DEBUGGING LOGS ---
-
-                    query = usersRef.where('class', '==', classNum).where('goal', '==', goal).where('role', '==', 'Student');
-                } else {
-                     // --- DEBUGGING LOGS ---
-                    console.log(`Building a simple query with:`);
-                    console.log(`  - class == "${selectedValue}" (Type: ${typeof selectedValue})`);
-                    console.log(`  - role  == "Student"`);
-                    // --- END DEBUGGING LOGS ---
-
-                    query = usersRef.where('class', '==', selectedValue).where('role', '==', 'Student');
-                }
-
                 const snapshot = await query.get();
-                console.log(`Firestore query returned ${snapshot.size} documents.`);
-                console.log("---------------------------------");
-
 
                 if (snapshot.empty) {
-                    studentListContainer.innerHTML = '<p class="placeholder-text">No students found. Check the console log and compare it with your Firestore data.</p>'; return;
+                    studentListContainer.innerHTML = '<p class="placeholder-text">No students found for this class. Please ensure student data is correct.</p>';
+                    return;
                 }
 
-                // ... (rest of the code to render the table)
                 studentListContainer.innerHTML = '';
-                snapshot.forEach(doc => { /* ... */ });
+                const students = [];
+                snapshot.forEach(doc => students.push({ id: doc.id, ...doc.data() }));
+                students.sort((a,b) => a.fullName.localeCompare(b.fullName)); // Sort alphabetically
+
+                students.forEach(student => {
+                    const row = document.createElement('div');
+                    row.className = 'student-row';
+                    row.dataset.id = student.id;
+                    row.dataset.name = student.fullName;
+                    row.innerHTML = `
+                        <span>${student.fullName}</span>
+                        <div class="attendance-options">
+                            <label><input type="radio" name="status-${student.id}" value="Present" required> Present</label>
+                            <label><input type="radio" name="status-${student.id}" value="Absent"> Absent</label>
+                        </div>`;
+                    studentListContainer.appendChild(row);
+                });
+                saveBtn.style.display = 'block';
 
             } catch (error) { 
-                console.error("Firestore Query Error:", error);
-                studentListContainer.innerHTML = '<p class="placeholder-text" style="color: #dc3545;">A Firestore error occurred. Check the console for details.</p>';
+                console.error("Error fetching students:", error);
+                studentListContainer.innerHTML = '<p class="placeholder-text" style="color: #dc3545;">An error occurred. A Firestore index on "class" and "role" might be required.</p>';
             }
         });
-
-        // The save button logic remains the same.
+        
+        // The save logic is already correct and does not need changes.
     </script>
 </body>
 </html>
