@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Attendance - ALLEN Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{--primary-blue:#0066ff;--background-color:#f0f4f9;--text-dark:#1d2c3c;--text-light:#5a6b7d;--border-color:#eef2f5;--success-green:#28a745;--error-red:#dc3545}
+        body{font-family:'Poppins',sans-serif;background-color:var(--background-color);margin:0;padding-top:5vh}
+        .main-container{max-width:600px;margin:auto;padding:20px;text-align:center}
+        .illustration{width:150px;height:150px;margin:0 auto 20px auto}
+        h2{font-weight:600;font-size:28px;color:var(--text-dark);margin-bottom:8px}
+        p.subtitle{color:var(--text-light);font-size:16px;margin-bottom:30px}
+        .attendance-container{background-color:white;border-radius:16px;padding:10px 20px;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,0.05)}
+        table{width:100%;border-collapse:collapse}
+        th, td{padding:18px 0;text-align:left;border-bottom:1px solid var(--border-color)}
+        th{color:var(--text-light);font-weight:500;font-size:14px}
+        td{color:var(--text-dark);font-weight:500}
+        tr:last-child td{border-bottom:none}
+        .status-present{color:var(--success-green);font-weight:600}
+        .status-absent{color:var(--error-red);font-weight:600}
+        .placeholder-text{padding:40px;color:var(--text-light);text-align:center}
+        .back-link{display:inline-block;margin-top:30px;color:var(--text-light);text-decoration:none;font-weight:500}
+        .back-link:hover{color:var(--primary-blue)}
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <svg class="illustration" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 7V5C8 3.89543 8.89543 3 10 3H14C15.1046 3 16 3.89543 16 5V7" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 12H5" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 19V5H8V19H5C3.89543 19 3 18.1046 3 17V10C3 8.89543 3.89543 8 5 8H19C20.1046 8 21 8.89543 21 10V17C21 18.1046 20.1046 19 19 19H12Z" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h2 id="student-name">Your Attendance</h2>
+        <p class="subtitle" id="sub-text">Here is your attendance history, sorted by most recent.</p>
+
+        <div class="attendance-container">
+            <table>
+                <thead><tr><th>Date</th><th>Status</th></tr></thead>
+                <tbody id="attendance-tbody"><tr><td colspan="2"><p class="placeholder-text">Loading history...</p></td></tr></tbody>
+            </table>
+        </div>
+        <a href="4.html" class="back-link">← Back to Profile</a>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app", messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const tableBody = document.getElementById('attendance-tbody');
+            const subText = document.getElementById('sub-text');
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) { alert("You must be logged in."); window.location.href = '1.html'; return; }
+
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (userDoc.exists) { document.getElementById('student-name').textContent = `${userDoc.data().fullName}'s Attendance`; }
+                const presentQuery = db.collection('attendance').where('presentStudentIds', 'array-contains', userId).get();
+                const absentQuery = db.collection('attendance').where('absentStudentIds', 'array-contains', userId).get();
+                const [presentSnapshot, absentSnapshot] = await Promise.all([presentQuery, absentQuery]);
+                const allRecords = [];
+                presentSnapshot.forEach(doc => allRecords.push({ date: doc.data().date, status: 'Present' }));
+                absentSnapshot.forEach(doc => allRecords.push({ date: doc.data().date, status: 'Absent' }));
+
+                if (allRecords.length === 0) { tableBody.innerHTML = '<tr><td colspan="2"><p class="placeholder-text">No records found.</p></td></tr>'; subText.textContent = "Your attendance will appear here once marked."; return; }
+                
+                allRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+                tableBody.innerHTML = '';
+                allRecords.forEach(record => { const row = document.createElement('tr'); row.innerHTML = `<td>${record.date}</td><td class="status-${record.status.toLowerCase()}">${record.status}</td>`; tableBody.appendChild(row); });
+            } catch (error) { console.error("Error fetching attendance:", error); tableBody.innerHTML = '<tr><td colspan="2"><p class="placeholder-text">Could not load data.</p></td></tr>'; }
+        });
+    </script>
+</body>
+</html>
