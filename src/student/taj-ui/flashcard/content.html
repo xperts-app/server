@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashcards</title>
+    <style>
+        :root {
+            --orange: #f9a825;
+            --green: #2e7d32;
+            --blue: #0277bd;
+            --card-bg: #ffffff;
+            --page-bg: #f0f4f8;
+            --text-dark: #263238;
+            --text-light: #546e7a;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--page-bg);
+            color: var(--text-dark);
+            overflow: hidden;
+        }
+
+        .flashcard-page {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+
+        .header-info h1 {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .header-info p {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin: 4px 0 0;
+        }
+
+        .close-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 40px;
+            background-color: #fff;
+            border-radius: 50%;
+            text-decoration: none;
+            font-size: 24px;
+            color: var(--text-light);
+            box-shadow: var(--shadow);
+            transition: transform 0.2s;
+        }
+
+        .close-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .card-area {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            perspective: 1000px;
+        }
+
+        .flashcard-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 80%;
+            max-height: 500px;
+        }
+
+        .flashcard {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        /* Stacked card effect */
+        .flashcard::before, .flashcard::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            z-index: -1;
+        }
+        .flashcard::before {
+            transform: rotate(-4deg);
+        }
+        .flashcard::after {
+            transform: rotate(4deg);
+        }
+
+        .flashcard.is-flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .card-face-front #card-question {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: auto;
+        }
+
+        #hint-area {
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        #show-hint-btn {
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        #hint-text {
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .card-face-back {
+            transform: rotateY(180deg);
+        }
+
+        #card-answer {
+            font-size: 1.5rem;
+        }
+
+        .page-footer {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px 20px 40px 20px;
+            flex-shrink: 0;
+        }
+
+        .page-footer button {
+            padding: 15px 0;
+            width: 45%;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 2px solid;
+            background-color: #fff;
+            transition: all 0.2s;
+        }
+        
+        .page-footer button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+        }
+
+        #btn-learning {
+            border-color: var(--orange);
+            color: var(--orange);
+        }
+
+        #btn-known {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="flashcard-page">
+        <header class="page-header">
+            <div class="header-info">
+                <h1 id="chapterTitle">Loading...</h1>
+                <p id="progress-text">Card 0 of 0</p>
+            </div>
+            <a href="javascript:history.back()" class="close-btn">×</a>
+        </header>
+
+        <main class="card-area">
+            <div class="flashcard-container">
+                <div class="flashcard" id="flashcard">
+                    <div class="card-face card-face-front">
+                        <p id="card-question">Loading question...</p>
+                        <div id="hint-area" class="hidden">
+                            <a href="#" id="show-hint-btn">SHOW A HINT</a>
+                            <p id="hint-text" class="hidden"></p>
+                        </div>
+                    </div>
+                    <div class="card-face card-face-back">
+                        <p id="card-answer">Loading answer...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="page-footer">
+            <button id="btn-learning">Still learning</button>
+            <button id="btn-known">I know this</button>
+        </footer>
+    </div>
+
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB4Fc3IhMFVz4v6mKc4tcc_yjaEIw4fbo4",
+            authDomain: "xperts-flashcards.firebaseapp.com",
+            projectId: "xperts-flashcards",
+            storageBucket: "xperts-flashcards.appspot.com",
+            messagingSenderId: "398115589486",
+            appId: "1:398115589486:web:3c513f5624686edd36c57f",
+            measurementId: "G-RYEDY563LR"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- Start of Application Logic ---
+        const flashcard = document.getElementById('flashcard');
+        const chapterTitleEl = document.getElementById('chapterTitle');
+        const cardQuestion = document.getElementById('card-question');
+        const cardAnswer = document.getElementById('card-answer');
+        const progressText = document.getElementById('progress-text');
+        const btnKnown = document.getElementById('btn-known');
+        const btnLearning = document.getElementById('btn-learning');
+        const hintArea = document.getElementById('hint-area');
+        const showHintBtn = document.getElementById('show-hint-btn');
+        const hintText = document.getElementById('hint-text');
+
+        let cards = [];
+        let currentCardIndex = 0;
+        let results = [];
+
+        // Helper function to clean text from stray <br> tags
+        function cleanText(text) {
+            if (typeof text !== 'string') return '';
+            return text.replace(/<br>/g, '').trim();
+        }
+
+        window.onload = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const chapterId = params.get('chapterId');
+
+            if (!chapterId) {
+                document.body.innerHTML = '<h1>Error: No chapter ID provided.</h1>';
+                return;
+            }
+
+            const docRef = doc(db, "chapters", chapterId);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const chapterData = docSnap.data();
+                cards = chapterData.cards || [];
+                chapterTitleEl.textContent = chapterData.chapterName;
+                if (cards.length > 0) {
+                    displayCard();
+                } else {
+                    document.body.innerHTML = '<h1>This chapter has no cards.</h1>';
+                }
+            } else {
+                document.body.innerHTML = '<h1>Error: Chapter not found.</h1>';
+            }
+        };
+
+        function displayCard() {
+            flashcard.classList.remove('is-flipped');
+            
+            setTimeout(() => {
+                const card = cards[currentCardIndex];
+                
+                // --- FIX APPLIED HERE ---
+                // Use the helper function to clean data before displaying it
+                cardQuestion.textContent = cleanText(card.question);
+                cardAnswer.textContent = cleanText(card.answer);
+                
+                progressText.textContent = `Card ${currentCardIndex + 1} of ${cards.length}`;
+
+                // Handle hint visibility
+                const cleanHint = cleanText(card.hint);
+                if (cleanHint) {
+                    hintArea.classList.remove('hidden');
+                    hintText.textContent = cleanHint;
+                    hintText.classList.add('hidden');
+                    showHintBtn.classList.remove('hidden');
+                } else {
+                    hintArea.classList.add('hidden');
+                }
+            }, 300); 
+        }
+
+        flashcard.addEventListener('click', () => {
+            flashcard.classList.toggle('is-flipped');
+        });
+
+        showHintBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); 
+            hintText.classList.remove('hidden');
+            showHintBtn.classList.add('hidden');
+        });
+
+        btnKnown.addEventListener('click', () => handleChoice('known'));
+        btnLearning.addEventListener('click', () => handleChoice('learning'));
+
+        function handleChoice(status) {
+            results.push({ ...cards[currentCardIndex], status });
+            currentCardIndex++;
+
+            if (currentCardIndex < cards.length) {
+                displayCard();
+            } else {
+                sessionStorage.setItem('flashcardResults', JSON.stringify(results));
+                window.location.href = 'result.html';
+            }
+        }
+    </script>
+
+</body>
+</html>
