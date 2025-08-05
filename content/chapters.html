@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapters</title>
+    <!-- Google Fonts for a modern look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #6d6d6d; 
+            --text-color: #1a202c;
+            --subtle-text-color: #718096;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --body-bg: #f7fafc;
+        }
+
+        /* --- THEMES --- */
+        .theme-bio, .theme-botany, .theme-zoology { --accent-color: #10B981; } /* Green */
+        .theme-eng { --accent-color: #EF4444; } /* Red */
+        .theme-phy, .theme-physics { --accent-color: #3B82F6; } /* Blue */
+        .theme-math { --accent-color: #0EA5E9; } /* Sky Blue */
+        .theme-chem, .theme-sst { --accent-color: #A855F7; } /* Magenta/Purple */
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--body-bg); color: var(--text-color); }
+        .app-container { max-width: 600px; margin: 0 auto; }
+
+        /* --- Header Style --- */
+        .subject-header {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            padding: 20px;
+            padding-top: 50px;
+            border-bottom: 4px solid var(--accent-color);
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-main { display: flex; align-items: center; justify-content: space-between;}
+        .header-main > div { display: flex; align-items: center; gap: 15px;}
+        .back-arrow { font-size: 24px; color: var(--text-color); text-decoration: none; }
+        .header-title h1 { font-size: 28px; font-weight: 700; }
+        .header-title .class-name { font-size: 16px; color: var(--subtle-text-color); }
+        .sparkle-icon { font-size: 28px; color: #EAB308; }
+        
+        .content-body { padding: 20px; }
+        
+        .recent-topic-card {
+            background: var(--card-bg); padding: 16px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            text-decoration: none; color: var(--text-color);
+        }
+        .recent-topic-card .topic-name { font-size: 18px; font-weight: 600; }
+        .recent-topic-card .topic-label { font-size: 14px; font-weight: 500; color: var(--accent-color); }
+        .recent-topic-card .arrow-icon { font-size: 20px; color: var(--subtle-text-color); }
+
+        .chapters-card { background-color: var(--card-bg); border-radius: 16px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); overflow: hidden; }
+        .card-header { padding: 20px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid var(--border-color); }
+        .card-header h2 { font-size: 18px; font-weight: 600; }
+        .card-header .chapter-count { font-size: 14px; color: var(--subtle-text-color); }
+        #toggle-chapters { background: none; border: none; font-size: 20px; cursor: pointer; transition: transform 0.3s ease; }
+        #toggle-chapters.collapsed { transform: rotate(180deg); }
+        
+        #chapter-list { list-style: none; max-height: 1000px; transition: max-height 0.5s ease-in-out, opacity 0.3s ease; opacity: 1; }
+        #chapter-list.collapsed { max-height: 0; opacity: 0; overflow: hidden; }
+        #chapter-list li a { display: block; padding: 16px 20px; text-decoration: none; color: var(--text-color); font-weight: 500; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease; }
+        #chapter-list li:last-child a { border-bottom: none; }
+        #chapter-list li a:hover { background-color: #f8f9fa; }
+        
+        #loader, #message { text-align: center; font-size: 1em; padding: 40px; color: var(--subtle-text-color); }
+        .error-message { color: #c53030; background-color: #fed7d7; padding: 15px; border-radius: 5px; margin: 20px; }
+    </style>
+</head>
+<body class="theme-default">
+    <main class="app-container">
+        <header class="subject-header">
+            <div class="header-main">
+                <div>
+                    <a href="javascript:history.back()" class="back-arrow">←</a>
+                    <div class="header-title">
+                        <h1 id="subject-name">Loading...</h1>
+                        <p class="class-name" id="class-name"></p>
+                    </div>
+                </div>
+                <span class="sparkle-icon">✨</span>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <!-- UPDATED: Added IDs and set default display to none -->
+            <a href="#" class="recent-topic-card" id="recent-topic-card" style="display: none;">
+                <div>
+                    <p class="topic-name" id="recent-topic-name"></p>
+                    <p class="topic-label">Recent Topic</p>
+                </div>
+                <span class="arrow-icon">></span>
+            </a>
+            
+            <div class="chapters-card">
+                <div class="card-header" id="card-header-toggle">
+                    <div>
+                        <h2>All Chapters</h2>
+                        <p class="chapter-count" id="chapter-count">...</p>
+                    </div>
+                    <button id="toggle-chapters">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+                    </button>
+                </div>
+                <div id="loader">Loading Chapters...</div>
+                <ul id="chapter-list">
+                    <!-- Chapter links will be injected here -->
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyALyD306KRV3o4BF6JddkvESPRroU7ljDE",
+          authDomain: "study-books-45192.firebaseapp.com",
+          projectId: "study-books-45192",
+          storageBucket: "study-books-45192.firebasestorage.app",
+          messagingSenderId: "339305499523",
+          appId: "1:339305499523:web:c51eaccbdaebe1293004b6",
+          measurementId: "G-MZWBP5RR9Z"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        const themeMap = {
+            'BIO': 'theme-bio', 'BOTANY': 'theme-botany', 'ZOOLOGY': 'theme-zoology',
+            'ENG': 'theme-eng', 'PHY': 'theme-phy', 'PHYSICS': 'theme-physics',
+            'MATH': 'theme-math', 'CHEM': 'theme-chem', 'SST': 'theme-sst',
+        };
+
+        const fullNameMap = {
+            'BIO': 'Biology', 'BOTANY': 'Botany', 'ZOOLOGY': 'Zoology',
+            'ENG': 'English', 'PHY': 'Physics', 'PHYSICS': 'Physics',
+            'MATH': 'Mathematics', 'CHEM': 'Chemistry', 'SST': 'Social Science',
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const body = document.body;
+            const subjectNameEl = document.getElementById('subject-name');
+            const classNameEl = document.getElementById('class-name');
+            const chapterListEl = document.getElementById('chapter-list');
+            const chapterCountEl = document.getElementById('chapter-count');
+            const loaderEl = document.getElementById('loader');
+
+            const params = new URLSearchParams(window.location.search);
+            const className = params.get('class');
+            const subjectKey = params.get('subject');
+
+            if (!className || !subjectKey) {
+                loaderEl.innerHTML = `<div class="error-message"><p>Error: Class and Subject must be provided in the URL.<br>Example: 2.html?class=11%20NEET&subject=BOTANY</p></div>`;
+                subjectNameEl.textContent = "Error";
+                classNameEl.textContent = "Invalid Parameters";
+                return;
+            }
+
+            const themeClass = themeMap[subjectKey.toUpperCase()];
+            if (themeClass) { body.classList.add(themeClass); }
+
+            const displaySubjectName = fullNameMap[subjectKey.toUpperCase()] || subjectKey;
+            subjectNameEl.textContent = displaySubjectName;
+            classNameEl.textContent = `Class ${className.replace(/%20/g, ' ')}`;
+            
+            // --- NEW: LOGIC TO LOAD RECENT TOPIC ---
+            const recentTopicCard = document.getElementById('recent-topic-card');
+            const recentTopicNameEl = document.getElementById('recent-topic-name');
+            const storageKey = `recent_topic_${className}_${subjectKey}`;
+            const recentChapter = localStorage.getItem(storageKey);
+
+            if (recentChapter) {
+                recentTopicNameEl.textContent = recentChapter;
+                const recentHref = `3.html?class=${encodeURIComponent(className)}&subject=${encodeURIComponent(subjectKey)}&chapter=${encodeURIComponent(recentChapter)}`;
+                recentTopicCard.href = recentHref;
+                recentTopicCard.style.display = 'flex'; // Make the card visible
+            }
+            // --- END OF NEW LOGIC ---
+
+            try {
+                const querySnapshot = await db.collection('content').where('class', '==', className).where('subject', '==', subjectKey).get();
+                const existingChapters = new Set();
+                querySnapshot.forEach(doc => { existingChapters.add(doc.data().chapter); });
+                loaderEl.style.display = 'none';
+                
+                if (existingChapters.size === 0) {
+                    chapterListEl.innerHTML = `<li id="message"><p>No chapters found for this selection.</p></li>`;
+                    chapterCountEl.textContent = '0 chapters';
+                } else {
+                    chapterCountEl.textContent = `${existingChapters.size} chapters`;
+                    const sortedChapters = [...existingChapters].sort((a, b) => a.localeCompare(b));
+                    let html = '';
+                    sortedChapters.forEach(chapterName => {
+                        const href = `3.html?class=${encodeURIComponent(className)}&subject=${encodeURIComponent(subjectKey)}&chapter=${encodeURIComponent(chapterName)}`;
+                        // ADDED: onclick event to save the chapter name to localStorage
+                        const escapedChapterName = chapterName.replace(/'/g, "\\'"); // Sanitize for JS string
+                        html += `<li><a href="${href}" onclick="localStorage.setItem('${storageKey}', '${escapedChapterName}')">${chapterName}</a></li>`;
+                    });
+                    chapterListEl.innerHTML = html;
+                }
+            } catch (error) {
+                console.error("Error fetching chapters: ", error);
+                loaderEl.innerHTML = `<div class="error-message"><p>Error loading chapters. This may be due to a missing Firestore index. Please check the developer console (F12).</p></div>`;
+            }
+
+            const toggleButton = document.getElementById('toggle-chapters');
+            const cardHeader = document.getElementById('card-header-toggle');
+            cardHeader.addEventListener('click', () => {
+                chapterListEl.classList.toggle('collapsed');
+                toggleButton.classList.toggle('collapsed');
+            });
+        });
+    </script>
+</body>
+</html>
