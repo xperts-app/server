@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --primary-hover: #0056b3;
+            --secondary-color: #6c757d;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #343a40;
+            --border-color: #dee2e6;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 25px;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--secondary-color);
+            border-bottom: 2px solid transparent;
+            transform: translateY(2px);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+        
+        .card {
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        input[type="text"], input[type="url"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus, input[type="url"]:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .hidden { display: none; }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .option-group {
+            border: 1px solid #f0f0f0;
+            padding: 15px;
+            border-radius: 6px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s ease-in-out;
+            z-index: 1000;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.success { background-color: var(--success-color); }
+        .toast.error { background-color: var(--error-color); }
+
+        @media (max-width: 900px) {
+            .form-grid, .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Admin Panel</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="addQuestion">Add Question</button>
+            <button class="tab-btn" data-tab="manageChapters">Manage Chapters</button>
+        </div>
+
+        <!-- Add Question Tab -->
+        <div id="addQuestion" class="tab-content active">
+            <form id="questionForm">
+                <div class="form-grid">
+                    <!-- Left Panel for Selections -->
+                    <div class="left-panel">
+                        <div class="card">
+                            <div class="form-group">
+                                <label for="classSelect">Class</label>
+                                <select id="classSelect" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="subjectSelect">Subject</label>
+                                <select id="subjectSelect" required disabled></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Chapter</label>
+                                <input type="radio" id="existingChapterRadio" name="chapterChoice" value="existing" checked>
+                                <label for="existingChapterRadio" style="display:inline-block; font-weight:normal;">Existing</label>
+                                 
+                                <input type="radio" id="newChapterRadio" name="chapterChoice" value="new">
+                                <label for="newChapterRadio" style="display:inline-block; font-weight:normal;">New</label>
+                            </div>
+                            <div id="existingChapterGroup" class="form-group">
+                                <select id="chapterSelect" required></select>
+                            </div>
+                            <div id="newChapterGroup" class="form-group hidden">
+                                <input type="text" id="newChapterInput" placeholder="Enter new chapter name">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right Panel for Question Details -->
+                    <div class="right-panel">
+                        <div class="card">
+                            <h4>Question</h4>
+                            <div class="form-group">
+                                <label for="questionText">Question Text (Optional)</label>
+                                <textarea id="questionText"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="questionImage">Question Image URL (Optional)</label>
+                                <input type="url" id="questionImage" placeholder="https://...">
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h4>Options (First one is correct by default)</h4>
+                             <div class="form-group">
+                                <label for="correctAnswer">Correct Answer</label>
+                                <select id="correctAnswer" required>
+                                    <option value="0">Option 1</option>
+                                    <option value="1">Option 2</option>
+                                    <option value="2">Option 3</option>
+                                    <option value="3">Option 4</option>
+                                </select>
+                            </div>
+                            <div id="optionsContainer" class="options-grid"></div>
+                        </div>
+                         <div class="card">
+                            <h4>Solution</h4>
+                            <div class="form-group">
+                                <label for="detailedSolution">Detailed Solution</label>
+                                <textarea id="detailedSolution" required></textarea>
+                            </div>
+                            <button type="submit" class="btn">Save Question</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Manage Chapters Tab -->
+        <div id="manageChapters" class="tab-content">
+            <div class="card" style="max-width: 600px; margin: auto;">
+                <h3>Add a New Chapter</h3>
+                <p>Use this form to pre-define a chapter for a class and subject. It will then appear in the "Existing Chapter" dropdown when adding questions.</p>
+                <form id="chapterForm">
+                     <div class="form-group">
+                        <label for="chapterClassSelect">Class</label>
+                        <select id="chapterClassSelect" required></select>
+                    </div>
+                     <div class="form-group">
+                        <label for="chapterSubjectSelect">Subject</label>
+                        <select id="chapterSubjectSelect" required disabled></select>
+                    </div>
+                     <div class="form-group">
+                        <label for="newChapterName">New Chapter Name</label>
+                        <input type="text" id="newChapterName" placeholder="e.g., Thermodynamics" required>
+                    </div>
+                    <button type="submit" class="btn">Add Chapter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+
+    <script>
+        // --- FIREBASE CONFIG ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyBrdCOyTrQ_uU4jID8hWzCQzaXilhAcGcs",
+          authDomain: "custom-practices.firebaseapp.com",
+          projectId: "custom-practices",
+          storageBucket: "custom-practices.firebasestorage.app",
+          messagingSenderId: "636700937539",
+          appId: "1:636700937539:web:d6ec9d88453e15481d33f6",
+          measurementId: "G-JL58DMTZ0W"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- GLOBAL DATA ---
+        const classes = ['6', '7', '8', '9', '10', '11 JEE', '11 NEET', '12 JEE', '12 NEET'];
+        const subjects = {
+            '6': ['PHY', 'CHEM', 'BIO', 'MATH', 'ENG', 'SST'], '7': ['PHY', 'CHEM', 'BIO', 'MATH', 'ENG', 'SST'], '8': ['PHY', 'CHEM', 'BIO', 'MATH', 'ENG', 'SST'], '9': ['PHY', 'CHEM', 'BIO', 'MATH', 'ENG', 'SST'], '10': ['PHY', 'CHEM', 'BIO', 'MATH', 'ENG', 'SST'],
+            '11 JEE': ['PHY', 'CHEM', 'MATH'], '11 NEET': ['BOTANY', 'ZOOLOGY', 'PHY', 'CHEM'],
+            '12 JEE': ['PHY', 'CHEM', 'MATH'], '12 NEET': ['BOTANY', 'ZOOLOGY', 'PHY', 'CHEM']
+        };
+
+        // --- DOM ELEMENTS ---
+        const allSelects = {
+            q_class: document.getElementById('classSelect'),
+            q_subject: document.getElementById('subjectSelect'),
+            q_chapter: document.getElementById('chapterSelect'),
+            c_class: document.getElementById('chapterClassSelect'),
+            c_subject: document.getElementById('chapterSubjectSelect'),
+        };
+        const questionForm = document.getElementById('questionForm');
+        const chapterForm = document.getElementById('chapterForm');
+        // ... (other specific element selectors)
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateClassSelects();
+            renderOptions();
+            setupTabs();
+            setupEventListeners();
+        });
+
+        function populateClassSelects() {
+            const classOptionsHTML = '<option value="">-- Select Class --</option>' + classes.map(c => `<option value="${c}">${c}</option>`).join('');
+            allSelects.q_class.innerHTML = classOptionsHTML;
+            allSelects.c_class.innerHTML = classOptionsHTML;
+        }
+        
+        function populateSubjectSelects(classValue, subjectSelectElement) {
+            subjectSelectElement.innerHTML = '<option value="">-- Select Subject --</option>';
+            subjectSelectElement.disabled = true;
+            if (classValue && subjects[classValue]) {
+                subjects[classValue].forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    subjectSelectElement.appendChild(option);
+                });
+                subjectSelectElement.disabled = false;
+            }
+        }
+
+        function setupTabs() {
+            const tabContainer = document.querySelector('.tabs');
+            tabContainer.addEventListener('click', (e) => {
+                if (e.target.matches('.tab-btn')) {
+                    const tabId = e.target.dataset.tab;
+                    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                    e.target.classList.add('active');
+                    document.getElementById(tabId).classList.add('active');
+                }
+            });
+        }
+        
+        function setupEventListeners() {
+            // Event listeners for the "Add Question" form
+            allSelects.q_class.addEventListener('change', (e) => {
+                populateSubjectSelects(e.target.value, allSelects.q_subject);
+                allSelects.q_subject.dispatchEvent(new Event('change')); // Trigger chapter fetch
+            });
+            allSelects.q_subject.addEventListener('change', fetchChapters);
+            
+            document.querySelectorAll('input[name="chapterChoice"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const isNew = e.target.value === 'new';
+                    document.getElementById('existingChapterGroup').classList.toggle('hidden', isNew);
+                    document.getElementById('newChapterGroup').classList.toggle('hidden', !isNew);
+                    document.getElementById('newChapterInput').required = isNew;
+                    allSelects.q_chapter.required = !isNew;
+                });
+            });
+
+            questionForm.addEventListener('submit', handleQuestionSubmit);
+
+            // Event listeners for the "Manage Chapters" form
+            allSelects.c_class.addEventListener('change', (e) => {
+                populateSubjectSelects(e.target.value, allSelects.c_subject);
+            });
+            chapterForm.addEventListener('submit', handleChapterSubmit);
+        }
+        
+        async function fetchChapters() {
+            const selectedClass = allSelects.q_class.value;
+            const selectedSubject = allSelects.q_subject.value;
+            const chapterSelect = allSelects.q_chapter;
+            chapterSelect.innerHTML = '<option value="">-- Loading... --</option>';
+            
+            if (!selectedClass || !selectedSubject) {
+                chapterSelect.innerHTML = '<option value="">-- Select Class & Subject --</option>';
+                return;
+            }
+
+            try {
+                // Fetch from both dedicated 'chapters' collection and implicitly from 'questions'
+                const chapterPromise = db.collection('chapters').where('class', '==', selectedClass).where('subject', '==', selectedSubject).get();
+                const questionPromise = db.collection('questions').where('class', '==', selectedClass).where('subject', '==', selectedSubject).get();
+                const [chapterSnapshot, questionSnapshot] = await Promise.all([chapterPromise, questionPromise]);
+                
+                const chapterSet = new Set();
+                chapterSnapshot.forEach(doc => chapterSet.add(doc.data().name));
+                questionSnapshot.forEach(doc => chapterSet.add(doc.data().chapter));
+
+                chapterSelect.innerHTML = '';
+                if (chapterSet.size === 0) {
+                    chapterSelect.innerHTML = '<option value="">-- No chapters found --</option>';
+                } else {
+                    [...chapterSet].sort().forEach(chapter => {
+                        const option = document.createElement('option');
+                        option.value = chapter;
+                        option.textContent = chapter;
+                        chapterSelect.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching chapters: ", error);
+                chapterSelect.innerHTML = '<option value="">-- Error --</option>';
+                showToast('Error fetching chapters.', 'error');
+            }
+        }
+
+        async function handleQuestionSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            let chapter;
+            if (form.chapterChoice.value === 'new') {
+                chapter = form.newChapterInput.value.trim();
+            } else {
+                chapter = form.chapterSelect.value;
+            }
+
+            if (!chapter) {
+                showToast("Please select or enter a chapter name.", "error");
+                return;
+            }
+            
+            const options = [];
+            for (let i = 0; i < 4; i++) {
+                options.push({
+                    text: document.getElementById(`option${i}Text`).value.trim(),
+                    imageUrl: document.getElementById(`option${i}Image`).value.trim()
+                });
+            }
+
+            const questionData = {
+                class: form.classSelect.value,
+                subject: form.subjectSelect.value,
+                chapter: chapter,
+                questionText: form.questionText.value.trim(),
+                questionImageUrl: form.questionImage.value.trim(),
+                options: options,
+                correctAnswerIndex: parseInt(form.correctAnswer.value, 10),
+                solution: form.detailedSolution.value.trim(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (!questionData.questionText && !questionData.questionImageUrl) {
+                showToast("Question must have text or an image.", "error");
+                return;
+            }
+
+            try {
+                await db.collection('questions').add(questionData);
+                showToast('Question saved successfully!', 'success');
+                form.reset();
+                allSelects.q_subject.dispatchEvent(new Event('change')); // Refresh chapters
+            } catch (error) {
+                console.error("Error adding question: ", error);
+                showToast('Error saving question. Check console.', 'error');
+            }
+        }
+
+        async function handleChapterSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const chapterData = {
+                class: form.chapterClassSelect.value,
+                subject: form.chapterSubjectSelect.value,
+                name: form.newChapterName.value.trim(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (!chapterData.class || !chapterData.subject || !chapterData.name) {
+                showToast('All fields are required.', 'error');
+                return;
+            }
+
+            try {
+                // Check if chapter already exists to prevent duplicates
+                const snapshot = await db.collection('chapters')
+                    .where('class', '==', chapterData.class)
+                    .where('subject', '==', chapterData.subject)
+                    .where('name', '==', chapterData.name)
+                    .get();
+
+                if (!snapshot.empty) {
+                    showToast('This chapter already exists.', 'error');
+                    return;
+                }
+
+                await db.collection('chapters').add(chapterData);
+                showToast('Chapter added successfully!', 'success');
+                form.reset();
+                // Optionally refresh the other form's chapter list if visible
+                if (allSelects.q_class.value === chapterData.class && allSelects.q_subject.value === chapterData.subject) {
+                    fetchChapters();
+                }
+            } catch (error) {
+                console.error("Error adding chapter: ", error);
+                showToast('Error adding chapter. Check console.', 'error');
+            }
+        }
+
+        function renderOptions() {
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                const optionHTML = `
+                    <div class="option-group">
+                        <h5>Option ${i + 1}</h5>
+                        <div class="form-group">
+                            <label for="option${i}Text">Text</label>
+                            <input type="text" id="option${i}Text">
+                        </div>
+                        <div class="form-group">
+                            <label for="option${i}Image">Image URL</label>
+                            <input type="url" id="option${i}Image" placeholder="https://...">
+                        </div>
+                    </div>`;
+                container.innerHTML += optionHTML;
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+    </script>
+</body>
+</html>
