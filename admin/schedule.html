@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Schedule Creator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #6c757d;
+            --background-color: #f4f7f6;
+            --form-bg-color: #ffffff;
+            --text-color: #333;
+            --border-color: #ced4da;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+        }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: var(--form-bg-color);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            font-weight: 700;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--secondary-color);
+        }
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        .time-group {
+            display: flex;
+            gap: 1rem;
+        }
+        .time-group .form-group {
+            flex: 1;
+        }
+        button {
+            width: 100%;
+            padding: 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #message {
+            text-align: center;
+            margin-top: 1rem;
+            font-weight: 500;
+            padding: 0.75rem;
+            border-radius: 6px;
+            display: none;
+        }
+        #message.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        #message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Scheduler</h1>
+        <form id="schedule-form">
+            <div class="form-group">
+                <label for="type-select">Type</label>
+                <select id="type-select" name="type" required>
+                    <option value="Class">Class</option>
+                    <option value="Test">Test</option>
+                    <option value="Activity">Activity</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="class-select">Class</label>
+                <select id="class-select" name="class" required>
+                    <option value="" disabled selected>Select a class</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="subject-select">Subject</label>
+                <select id="subject-select" name="subject" required>
+                    <option value="" disabled selected>Select class first</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="title-input">Title / Topic</label>
+                <input type="text" id="title-input" name="title" placeholder="e.g., Photosynthesis" required>
+            </div>
+            <div class="form-group">
+                <label for="date-input">Date</label>
+                <input type="date" id="date-input" name="date" required>
+            </div>
+            <div class="time-group">
+                <div class="form-group">
+                    <label for="start-time-input">Start Time</label>
+                    <input type="time" id="start-time-input" name="startTime" required>
+                </div>
+                <div class="form-group">
+                    <label for="end-time-input">End Time</label>
+                    <input type="time" id="end-time-input" name="endTime" required>
+                </div>
+            </div>
+            <button type="submit">Schedule Event</button>
+        </form>
+        <div id="message"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDCnGQGoUHeV2o90J9asNPVwQxZbQueTU",
+            authDomain: "xperts-shadule.firebaseapp.com",
+            projectId: "xperts-shadule",
+            storageBucket: "xperts-shadule.appspot.com",
+            messagingSenderId: "305083972954",
+            appId: "1:305083972954:web:964729b6b49fdaa2a4c763",
+            measurementId: "G-L70G36H5B7"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const classSelect = document.getElementById('class-select');
+        const subjectSelect = document.getElementById('subject-select');
+        const scheduleForm = document.getElementById('schedule-form');
+        const messageDiv = document.getElementById('message');
+
+        const subjects = {
+            '6-10': ['English', 'SST', 'Maths', 'Physics', 'Chemistry', 'Biology'],
+            '11-12': ['Physics', 'Chemistry', 'Biology', 'Maths']
+        };
+
+        classSelect.addEventListener('change', (e) => {
+            const selectedClass = parseInt(e.target.value, 10);
+            let subjectOptions = [];
+
+            if (selectedClass >= 6 && selectedClass <= 10) {
+                subjectOptions = subjects['6-10'];
+            } else if (selectedClass >= 11 && selectedClass <= 12) {
+                subjectOptions = subjects['11-12'];
+            }
+
+            subjectSelect.innerHTML = '<option value="" disabled selected>Select a subject</option>'; // Reset
+            subjectOptions.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject;
+                option.textContent = subject;
+                subjectSelect.appendChild(option);
+            });
+        });
+
+        scheduleForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(scheduleForm);
+            const scheduleData = {
+                type: formData.get('type'),
+                class: formData.get('class'),
+                subject: formData.get('subject'),
+                title: formData.get('title'),
+                date: formData.get('date'), // Stored as YYYY-MM-DD
+                startTime: formData.get('startTime'), // Stored as HH:MM
+                endTime: formData.get('endTime'),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            try {
+                await db.collection('schedules').add(scheduleData);
+                showMessage('Event scheduled successfully!', 'success');
+                scheduleForm.reset();
+                subjectSelect.innerHTML = '<option value="" disabled selected>Select class first</option>';
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                showMessage(`Error: ${error.message}`, 'error');
+            }
+        });
+
+        function showMessage(msg, type) {
+            messageDiv.textContent = msg;
+            messageDiv.className = type;
+            setTimeout(() => {
+                messageDiv.className = '';
+                messageDiv.style.display = 'none';
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
