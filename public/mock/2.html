@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Tests</title>
+    <style>
+        :root {
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --color-blue: #007AFF; /* A clean, modern blue for actions */
+            --color-green: #34C759; /* A vibrant green for success status */
+            --border-color: #e5e5ea;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            color: var(--text-primary);
+        }
+        .header {
+            background-color: var(--card-bg);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .back-arrow {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--text-primary);
+            cursor: pointer;
+            margin-right: 12px;
+            text-decoration: none;
+        }
+        .header-content h1 {
+            font-size: 18px;
+            margin: 0;
+        }
+        .header-content p {
+            font-size: 14px;
+            margin: 2px 0 0;
+            color: var(--text-secondary);
+        }
+        .main-container {
+            padding: 16px;
+        }
+        .filter-container {
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .test-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .test-card:active {
+            background-color: #f5f5f5;
+        }
+        .test-card h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 500;
+        }
+        .status-completed {
+            color: var(--color-green);
+            font-weight: 500;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-completed svg {
+            width: 18px;
+            height: 18px;
+        }
+        #loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease-in-out; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card-bg); padding: 20px; padding-bottom: 30px; border-top-left-radius: 16px; border-top-right-radius: 16px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); transform: translateY(100%); transition: transform 0.3s ease-in-out; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;}
+        .modal-header h3 { margin: 0; font-size: 18px; }
+        .modal-header p { margin: 0; color: var(--text-secondary); font-size: 14px;}
+        .close-btn { font-size: 28px; color: #888; cursor: pointer; border: none; background: none; padding: 0 5px; }
+        .modal-buttons { display: flex; flex-direction: column; gap: 10px; }
+        .btn { width: 100%; box-sizing: border-box; display: inline-block; padding: 14px 25px; border: 1px solid #ddd; color: var(--text-primary); background-color: #f8f9fa; border-radius: 8px; cursor: pointer; font-size: 16px; text-decoration: none; text-align: center; font-weight: 500; }
+        .btn-primary { background-color: var(--color-blue); color: white; border-color: var(--color-blue); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="#" onclick="history.back(); return false;" class="back-arrow">&larr;</a>
+    <div class="header-content">
+        <h1>ALLEN Mock Test</h1>
+        <p id="completed-count">0/0 Tests completed</p>
+    </div>
+</div>
+
+<div class="main-container">
+    <div class="filter-container">
+        <button class="filter-btn">Completed</button>
+    </div>
+    <div id="test-list">
+        <p id="loading">Loading tests...</p>
+    </div>
+</div>
+
+<div class="modal-overlay" id="action-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div>
+                <h3 id="modal-test-name">Part Test - 1</h3>
+                <p id="modal-test-details">PNCF | 2 hrs 30 mins</p>
+            </div>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-buttons" id="modal-buttons"></div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    // All JS logic remains the same.
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let userId = localStorage.getItem('userId') || `user_${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('userId', userId);
+
+    function showActionModal(test, isCompleted, resultId) {
+        document.getElementById('modal-test-name').textContent = test.testName;
+        document.getElementById('modal-test-details').textContent = `${test.class || ''} | ${test.duration} mins`;
+        const buttonsContainer = document.getElementById('modal-buttons');
+        if (isCompleted) {
+            buttonsContainer.innerHTML = `<a href="4.html?resultId=${resultId}" class="btn">View Result</a><a href="5.html?testId=${test.id}" class="btn">View Leaderboard</a><a href="3.html?testId=${test.id}" class="btn btn-primary">Re-attempt Test</a>`;
+        } else {
+            buttonsContainer.innerHTML = `<a href="3.html?testId=${test.id}" class="btn btn-primary">Attempt Test</a>`;
+        }
+        document.getElementById('action-modal').classList.add('active');
+    }
+    function closeModal() { document.getElementById('action-modal').classList.remove('active'); }
+    document.getElementById('action-modal').addEventListener('click', (event) => (event.target === event.currentTarget) && closeModal());
+    
+    async function loadTests() {
+        const testListDiv = document.getElementById('test-list');
+        const loadingDiv = document.getElementById('loading');
+        const urlParams = new URLSearchParams(window.location.search);
+        const className = urlParams.get('class');
+        if (!className) {
+            loadingDiv.style.display = 'none';
+            testListDiv.innerHTML = `<p>Error: No class specified in URL. Example: ?class=NEET</p>`;
+            return;
+        }
+        document.querySelector('.header-content h1').textContent = `${className} Mock Tests`;
+        try {
+            const testsSnapshot = await db.collection('tests').where('class', '==', className).get();
+            const tests = testsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const resultsSnapshot = await db.collection('results').where('userId', '==', userId).get();
+            const completedTests = new Map();
+            resultsSnapshot.forEach(doc => { completedTests.set(doc.data().testId, doc.id); });
+            loadingDiv.style.display = 'none';
+            testListDiv.innerHTML = '';
+            if (tests.length === 0) {
+                testListDiv.innerHTML = `<p style="text-align:center; color: var(--text-secondary);">No tests found for class '<strong>${className}</strong>'.</p>`;
+                return;
+            }
+            document.getElementById('completed-count').textContent = `${completedTests.size}/${tests.length} Tests completed`;
+            tests.forEach(test => {
+                const isCompleted = completedTests.has(test.id);
+                const resultId = completedTests.get(test.id);
+                const card = document.createElement('div');
+                card.className = 'test-card';
+                card.onclick = () => showActionModal(test, isCompleted, resultId);
+                let statusHtml = `<h3>${test.testName}</h3>`;
+                if (isCompleted) {
+                    statusHtml += `<div class="status-completed"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16.28 8.22a.75.75 0 00-1.06-1.06L9.75 12.69 7.78 10.72a.75.75 0 00-1.06 1.06l2.5 2.5a.75.75 0 001.06 0l5.5-5.5z" clip-rule="evenodd" /></svg>Completed</div>`;
+                }
+                card.innerHTML = statusHtml;
+                testListDiv.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Firebase Error:", error);
+            loadingDiv.style.display = 'none';
+            testListDiv.innerHTML = `<p style="text-align:center; color: red;">Could not load tests due to an error.</p>`;
+        }
+    }
+    loadTests();
+</script>
+</body>
+</html>
