@@ -1,127 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Leaderboard</title>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
 
     <!-- ======== EMBEDDED CSS ======== -->
     <style>
+        :root {
+            --primary-color: #3498db;
+            --background-color: #f0f2f5;
+            --card-background: #ffffff;
+            --text-color: #333;
+            --light-text-color: #777;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --gold-medal: #FFD700;
+            --silver-medal: #C0C0C0;
+            --bronze-medal: #CD7F32;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
             margin: 0;
             padding: 20px;
-            display: flex;
-            justify-content: center;
         }
 
         .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: var(--card-background);
+            border-radius: 12px;
+            padding: 25px 40px;
+            box-shadow: 0 8px 25px var(--shadow-color);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            color: var(--text-color);
+            font-weight: 700;
+        }
+
+        .header #class-title {
+            margin: 5px 0 0 0;
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+            display: none; /* Hidden by default, shown by JS if there's data */
+        }
+
+        .search-container .fa-search {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--light-text-color);
+        }
+
+        #search-input {
             width: 100%;
-            max-width: 800px;
-            background-color: #ffffff;
-            padding: 20px 40px;
+            padding: 12px 12px 12px 40px;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
         }
 
-        h1 {
-            color: #2c3e50;
+        #search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        #leaderboard-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .student-card {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--card-background);
+            border: 1px solid #eef;
+            border-radius: 10px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .student-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px var(--shadow-color);
+        }
+
+        .student-card .rank {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            width: 50px;
             text-align: center;
+            flex-shrink: 0;
+        }
+        
+        .student-card .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-right: 15px;
+            flex-shrink: 0;
         }
 
-        #class-title {
-            color: #3498db;
-            text-align: center;
-            margin-top: -10px;
-            font-weight: 500;
+        .student-info {
+            flex-grow: 1;
+        }
+        
+        .student-info .name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 0;
         }
 
-        .loader {
+        .student-info .marks {
+            color: var(--light-text-color);
+            font-size: 0.9rem;
+            margin: 2px 0 0 0;
+        }
+        
+        .medal {
+            font-size: 1.8rem;
+            margin-left: 15px;
+            flex-shrink: 0;
+        }
+
+        .medal-gold { color: var(--gold-medal); }
+        .medal-silver { color: var(--silver-medal); }
+        .medal-bronze { color: var(--bronze-medal); }
+
+        .loader, .error {
             text-align: center;
             font-size: 1.2em;
-            padding: 20px;
-            color: #7f8c8d;
+            padding: 40px;
+            color: var(--light-text-color);
         }
 
         .error {
             color: #e74c3c;
-            background-color: #fbeae5;
-            border: 1px solid #e74c3c;
-            padding: 15px;
-            border-radius: 5px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        #leaderboard-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        #leaderboard-table thead {
-            background-color: #3498db;
-            color: #ffffff;
-        }
-
-        #leaderboard-table th,
-        #leaderboard-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #dddddd;
-        }
-
-        #leaderboard-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-
-        #leaderboard-table tbody tr:hover {
-            background-color: #ecf0f1;
-        }
-
-        #leaderboard-table td:first-child {
-            font-weight: bold;
-            color: #2c3e50;
+            font-weight: 600;
         }
     </style>
 </head>
-
 <body>
 
-    <!-- ======== HTML CONTENT ======== -->
     <div class="container">
-        <h1>Student Leaderboard</h1>
-        <h2 id="class-title"></h2>
+        <div class="header">
+            <h1>Student Leaderboard</h1>
+            <h2 id="class-title"></h2>
+        </div>
+
+        <div id="search-container" class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-input" placeholder="Search for a student...">
+        </div>
 
         <div id="loader" class="loader">Loading...</div>
+        <p id="error-message" class="error" style="display: none;"></p>
         
-        <p id="error-message" class="error"></p>
-
-        <table id="leaderboard-table">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Student Name</th>
-                    <th>Total Marks</th>
-                </tr>
-            </thead>
-            <tbody id="leaderboard-body">
-                <!-- Student data will be dynamically inserted here -->
-            </tbody>
-        </table>
+        <ul id="leaderboard-list">
+            <!-- Student cards will be inserted here by JavaScript -->
+        </ul>
     </div>
 
-    <!-- ======== FIREBASE SDKs ======== -->
-    <!-- It's recommended to use the latest version, but v8 is used here for simplicity -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <!-- ======== EMBEDDED JAVASCRIPT ======== -->
     <script>
-        // Your provided Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
             authDomain: "xperts-data.firebaseapp.com",
@@ -132,106 +218,107 @@
             measurementId: "G-6TS06NTDZQ"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Get DOM elements
         const loader = document.getElementById('loader');
         const classTitle = document.getElementById('class-title');
-        const leaderboardBody = document.getElementById('leaderboard-body');
+        const leaderboardList = document.getElementById('leaderboard-list');
         const errorMessage = document.getElementById('error-message');
-        const leaderboardTable = document.getElementById('leaderboard-table');
-
-        // Helper function to show an error message
+        const searchInput = document.getElementById('search-input');
+        const searchContainer = document.getElementById('search-container');
+        
+        // --- Search Functionality ---
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const allCards = document.querySelectorAll('.student-card');
+            
+            allCards.forEach(card => {
+                const studentName = card.dataset.name.toLowerCase();
+                if (studentName.includes(searchTerm)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+        
+        // --- UI Helper Functions ---
         function showError(message) {
             errorMessage.textContent = message;
             errorMessage.style.display = 'block';
             loader.style.display = 'none';
-            leaderboardTable.style.display = 'none';
+            searchContainer.style.display = 'none';
         }
 
-        // Helper function to render the leaderboard table
+        function getMedal(rank) {
+            if (rank === 1) return '<i class="fas fa-trophy medal medal-gold"></i>';
+            if (rank === 2) return '<i class="fas fa-trophy medal medal-silver"></i>';
+            if (rank === 3) return '<i class="fas fa-trophy medal medal-bronze"></i>';
+            return ''; // No medal for other ranks
+        }
+        
         function renderLeaderboard(rankedStudents) {
-            leaderboardBody.innerHTML = ''; // Clear previous entries
-
+            leaderboardList.innerHTML = ''; // Clear previous entries
+            
             rankedStudents.forEach((student, index) => {
                 const rank = index + 1;
-                const row = document.createElement('tr');
+                const medalHTML = getMedal(rank);
+                const firstInitial = student.name.charAt(0).toUpperCase();
 
-                row.innerHTML = `
-                    <td>${rank}</td>
-                    <td>${student.name}</td>
-                    <td>${student.totalMarks}</td>
+                const card = document.createElement('li');
+                card.className = 'student-card';
+                // Store name in data-attribute for easy searching
+                card.dataset.name = student.name;
+
+                card.innerHTML = `
+                    <div class="rank">${rank}</div>
+                    <div class="avatar">${firstInitial}</div>
+                    <div class="student-info">
+                        <p class="name">${student.name}</p>
+                        <p class="marks">Total Marks: ${student.totalMarks}</p>
+                    </div>
+                    ${medalHTML}
                 `;
-
-                leaderboardBody.appendChild(row);
+                leaderboardList.appendChild(card);
             });
 
             loader.style.display = 'none';
-            leaderboardTable.style.display = 'table';
+            searchContainer.style.display = 'block'; // Show search bar now that data is loaded
         }
-
-        // Main function to fetch and process data
+        
         async function getLeaderboardData(className) {
-            // This object will aggregate scores. We use studentMobile as a unique key.
-            // { '9784669701': { name: 'The Imagine Company', totalMarks: 100 } }
             const studentScores = {};
-
-            // Find all tests that match the given class name
             const testsQuery = db.collection('tests').where('class', '==', className);
             const testsSnapshot = await testsQuery.get();
 
             if (testsSnapshot.empty) {
                 console.log(`No tests found for class: ${className}`);
-                return {}; // Return empty object if no tests
+                return {};
             }
 
-            // For each test found, create a promise to fetch its 'results' subcollection
-            const resultPromises = [];
-            testsSnapshot.forEach(testDoc => {
-                const resultsCollectionRef = testDoc.ref.collection('results');
-                resultPromises.push(resultsCollectionRef.get());
-            });
-
-            // Wait for all the result fetches to complete
+            const resultPromises = testsSnapshot.docs.map(testDoc => 
+                testDoc.ref.collection('results').get()
+            );
+            
             const allResultsSnapshots = await Promise.all(resultPromises);
 
-            // Process the results from all tests
             allResultsSnapshots.forEach(resultsSnapshot => {
                 resultsSnapshot.forEach(resultDoc => {
                     const data = resultDoc.data();
-                    
-                    // Ensure the result has the required fields
                     if (data.studentMobile && data.studentName && typeof data.marks === 'number') {
-                        const studentMobile = data.studentMobile;
-                        const studentName = data.studentName;
-                        const marks = data.marks;
-
-                        // If we haven't seen this student before, initialize their record
-                        if (!studentScores[studentMobile]) {
-                            studentScores[studentMobile] = {
-                                name: studentName,
-                                totalMarks: 0
-                            };
+                        if (!studentScores[data.studentMobile]) {
+                            studentScores[data.studentMobile] = { name: data.studentName, totalMarks: 0 };
                         }
-
-                        // Add the marks from this test to their total
-                        studentScores[studentMobile].totalMarks += marks;
+                        studentScores[data.studentMobile].totalMarks += data.marks;
                     }
                 });
             });
-
             return studentScores;
         }
-        
-        // Main function to run on page load
-        window.onload = async () => {
-            // Hide table and error message initially
-            leaderboardTable.style.display = 'none';
-            errorMessage.style.display = 'none';
 
-            // 1. Get the class from URL parameter
+        // --- Main Execution on Page Load ---
+        window.onload = async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const className = urlParams.get('class');
 
@@ -240,17 +327,13 @@
                 return;
             }
 
-            classTitle.textContent = `Class: ${className}`;
+            classTitle.textContent = decodeURIComponent(className);
 
             try {
-                // 2. Fetch data and get aggregated student scores
                 const studentScores = await getLeaderboardData(className);
-                
-                // 3. Convert the scores object into an array and sort it by total marks (descending)
                 const rankedStudents = Object.values(studentScores)
                                              .sort((a, b) => b.totalMarks - a.totalMarks);
 
-                // 4. Render the leaderboard table or show a message if no results
                 if (rankedStudents.length > 0) {
                     renderLeaderboard(rankedStudents);
                 } else {
@@ -259,11 +342,9 @@
 
             } catch (error) {
                 console.error("Error fetching leaderboard data: ", error);
-                showError("An error occurred while fetching data. Please check the browser console for details.");
+                showError("An error occurred while fetching data. Check console for details.");
             }
         };
-
     </script>
-
 </body>
 </html>
