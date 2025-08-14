@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <style>
+        :root{--primary-blue:#0066ff;--background-color:#f0f4f9}body{background-color:var(--background-color);margin:0;display:flex;height:100vh;justify-content:center;align-items:center}.spinner{width:50px;height:50px;border:5px solid rgba(0,102,255,.2);border-top-color:var(--primary-blue);border-radius:50%;animation:spin 1s ease-in-out infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+    <div class="spinner"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig={apiKey:"AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",authDomain:"xperts-data.firebaseapp.com",projectId:"xperts-data",storageBucket:"xperts-data.firebasestorage.app",messagingSenderId:"934675149024",appId:"1:934675149024:web:23486a5f38f65f103ce085"};firebase.initializeApp(firebaseConfig);const db=firebase.firestore();const classUrlMap={6:"https://abc.xyz/6",7:"https://abc.xyz/7",8:"https://abc.xyz/8",9:"https://abc.xyz/9",10:"https://abc.xyz/10","11-NEET":"https://abc.xyz/N11","11-JEE":"https://abc.xyz/J11","12-NEET":"https://abc.xyz/N12","12-JEE":"https://abc.xyz/J12"};document.addEventListener("DOMContentLoaded",async()=>{const e=localStorage.getItem("loggedInUserId");if(!e)return void(window.location.href="1.html");try{const t=await db.collection("users").doc(e).get();if(!t.exists)throw new Error("User not found");const s=t.data(),{class:a,goal:l,role:n}=s;if("Student"!==n)return void(window.location.href="4.html");if(!a)throw new Error("Profile incomplete: class not found");let d=a;"NEET"===l||"JEE"===l?d=`${a}-${l}`:a.toString().replace("th","");const r=classUrlMap[d];if(!r)throw new Error(`Configuration Error: No URL for key "${d}"`);window.location.replace(r)}catch(e){console.error("Redirect failed:",e),alert("Could not redirect you. "+e.message),window.location.href="4.html"}});
+    </script>
+</body>
+</html>
