@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Leaderboard</title>
+
+    <!-- ======== EMBEDDED CSS ======== -->
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            padding: 20px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        #class-title {
+            color: #3498db;
+            text-align: center;
+            margin-top: -10px;
+            font-weight: 500;
+        }
+
+        .loader {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .error {
+            color: #e74c3c;
+            background-color: #fbeae5;
+            border: 1px solid #e74c3c;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        #leaderboard-table thead {
+            background-color: #3498db;
+            color: #ffffff;
+        }
+
+        #leaderboard-table th,
+        #leaderboard-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #dddddd;
+        }
+
+        #leaderboard-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        #leaderboard-table tbody tr:hover {
+            background-color: #ecf0f1;
+        }
+
+        #leaderboard-table td:first-child {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ======== HTML CONTENT ======== -->
+    <div class="container">
+        <h1>Student Leaderboard</h1>
+        <h2 id="class-title"></h2>
+
+        <div id="loader" class="loader">Loading...</div>
+        
+        <p id="error-message" class="error"></p>
+
+        <table id="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Student Name</th>
+                    <th>Total Marks</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboard-body">
+                <!-- Student data will be dynamically inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ======== FIREBASE SDKs ======== -->
+    <!-- It's recommended to use the latest version, but v8 is used here for simplicity -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- ======== EMBEDDED JAVASCRIPT ======== -->
+    <script>
+        // Your provided Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+            authDomain: "xperts-data.firebaseapp.com",
+            projectId: "xperts-data",
+            storageBucket: "xperts-data.firebasestorage.app",
+            messagingSenderId: "934675149024",
+            appId: "1:934675149024:web:23486a5f38f65f103ce085",
+            measurementId: "G-6TS06NTDZQ"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Get DOM elements
+        const loader = document.getElementById('loader');
+        const classTitle = document.getElementById('class-title');
+        const leaderboardBody = document.getElementById('leaderboard-body');
+        const errorMessage = document.getElementById('error-message');
+        const leaderboardTable = document.getElementById('leaderboard-table');
+
+        // Helper function to show an error message
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            loader.style.display = 'none';
+            leaderboardTable.style.display = 'none';
+        }
+
+        // Helper function to render the leaderboard table
+        function renderLeaderboard(rankedStudents) {
+            leaderboardBody.innerHTML = ''; // Clear previous entries
+
+            rankedStudents.forEach((student, index) => {
+                const rank = index + 1;
+                const row = document.createElement('tr');
+
+                row.innerHTML = `
+                    <td>${rank}</td>
+                    <td>${student.name}</td>
+                    <td>${student.totalMarks}</td>
+                `;
+
+                leaderboardBody.appendChild(row);
+            });
+
+            loader.style.display = 'none';
+            leaderboardTable.style.display = 'table';
+        }
+
+        // Main function to fetch and process data
+        async function getLeaderboardData(className) {
+            // This object will aggregate scores. We use studentMobile as a unique key.
+            // { '9784669701': { name: 'The Imagine Company', totalMarks: 100 } }
+            const studentScores = {};
+
+            // Find all tests that match the given class name
+            const testsQuery = db.collection('tests').where('class', '==', className);
+            const testsSnapshot = await testsQuery.get();
+
+            if (testsSnapshot.empty) {
+                console.log(`No tests found for class: ${className}`);
+                return {}; // Return empty object if no tests
+            }
+
+            // For each test found, create a promise to fetch its 'results' subcollection
+            const resultPromises = [];
+            testsSnapshot.forEach(testDoc => {
+                const resultsCollectionRef = testDoc.ref.collection('results');
+                resultPromises.push(resultsCollectionRef.get());
+            });
+
+            // Wait for all the result fetches to complete
+            const allResultsSnapshots = await Promise.all(resultPromises);
+
+            // Process the results from all tests
+            allResultsSnapshots.forEach(resultsSnapshot => {
+                resultsSnapshot.forEach(resultDoc => {
+                    const data = resultDoc.data();
+                    
+                    // Ensure the result has the required fields
+                    if (data.studentMobile && data.studentName && typeof data.marks === 'number') {
+                        const studentMobile = data.studentMobile;
+                        const studentName = data.studentName;
+                        const marks = data.marks;
+
+                        // If we haven't seen this student before, initialize their record
+                        if (!studentScores[studentMobile]) {
+                            studentScores[studentMobile] = {
+                                name: studentName,
+                                totalMarks: 0
+                            };
+                        }
+
+                        // Add the marks from this test to their total
+                        studentScores[studentMobile].totalMarks += marks;
+                    }
+                });
+            });
+
+            return studentScores;
+        }
+        
+        // Main function to run on page load
+        window.onload = async () => {
+            // Hide table and error message initially
+            leaderboardTable.style.display = 'none';
+            errorMessage.style.display = 'none';
+
+            // 1. Get the class from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const className = urlParams.get('class');
+
+            if (!className) {
+                showError("Please specify a class in the URL. Example: ?class=12 NEET");
+                return;
+            }
+
+            classTitle.textContent = `Class: ${className}`;
+
+            try {
+                // 2. Fetch data and get aggregated student scores
+                const studentScores = await getLeaderboardData(className);
+                
+                // 3. Convert the scores object into an array and sort it by total marks (descending)
+                const rankedStudents = Object.values(studentScores)
+                                             .sort((a, b) => b.totalMarks - a.totalMarks);
+
+                // 4. Render the leaderboard table or show a message if no results
+                if (rankedStudents.length > 0) {
+                    renderLeaderboard(rankedStudents);
+                } else {
+                    showError(`No results found for class "${className}".`);
+                }
+
+            } catch (error) {
+                console.error("Error fetching leaderboard data: ", error);
+                showError("An error occurred while fetching data. Please check the browser console for details.");
+            }
+        };
+
+    </script>
+
+</body>
+</html>
