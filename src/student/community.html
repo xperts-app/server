@@ -28,8 +28,6 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); display: flex;
             flex-direction: column; overflow: hidden; position: relative;
         }
-
-        /* --- Login Screen --- */
         #login-container { padding: 40px 20px; display: flex; flex-direction: column; justify-content: center; height: 100%; }
         #login-container h1 { text-align: center; color: var(--accent-color); margin-bottom: 30px; }
         .input-group { margin-bottom: 15px; }
@@ -39,15 +37,11 @@
         #login-btn:hover { opacity: 0.9; }
         #login-btn:disabled { background-color: #99cfff; cursor: not-allowed; }
         #error-message { color: var(--error-color); text-align: center; margin-top: 15px; height: 20px; font-size: 14px; }
-
-        /* --- Chat Screen --- */
         #chat-container { display: none; flex-direction: column; height: 100%; }
         .chat-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: var(--accent-color); color: white; flex-shrink: 0; }
         #chat-title { font-weight: bold; font-size: 18px; margin: 0; }
         #logout-btn { background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
-        
         #messages-container { flex-grow: 1; padding: 15px; overflow-y: auto; background-color: var(--primary-bg); display: flex; flex-direction: column; }
-        
         .message-group { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; }
         .message-group.sent { align-self: flex-end; }
         .message-group.received { align-self: flex-start; }
@@ -55,14 +49,10 @@
         .message { padding: 10px 14px; border-radius: 20px; word-wrap: break-word; user-select: none; position: relative; line-height: 1.4; }
         .message-group.sent .message { background-color: var(--sent-bg); align-self: flex-end; border-bottom-right-radius: 5px; }
         .message-group.received .message { background-color: var(--received-bg); align-self: flex-start; border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
-
-        /* --- Modern Message Form --- */
         #message-form { display: flex; padding: 10px; background-color: var(--secondary-bg); flex-shrink: 0; align-items: center; gap: 10px; }
         #message-input { flex-grow: 1; background-color: var(--input-bg); border: none; border-radius: 20px; padding: 12px 18px; font-size: 16px; }
         #send-btn { background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
         #send-btn svg { width: 22px; height: 22px; fill: white; margin-left: 2px; }
-
-        /* --- Context Menu --- */
         #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 199; display: none; }
         #message-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 200; display: none; padding: 5px 0; min-width: 180px; }
         .menu-option { padding: 10px 20px; cursor: pointer; font-size: 15px; }
@@ -72,10 +62,7 @@
 </head>
 <body>
     <div id="app-container">
-        <!-- Login View -->
         <div id="login-container"></div>
-
-        <!-- Chat View -->
         <div id="chat-container">
             <div class="chat-header">
                 <h1 id="chat-title">Chat</h1>
@@ -89,27 +76,48 @@
                 </button>
             </form>
         </div>
-        
-        <!-- Context Menu -->
         <div id="menu-overlay"></div>
         <div id="message-menu">
              <div id="delete-me-btn" class="menu-option">Delete for Me</div>
              <div id="delete-everyone-btn" class="menu-option danger">Delete for Everyone</div>
         </div>
     </div>
-
-    <!-- Firebase SDK Scripts -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com",
-            projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app",
-            messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085",
+        // --- 1. FIREBASE CONFIGURATION (DUAL DATABASE SETUP) ---
+
+        // OLD config for User Login
+        const loginConfig = {
+            apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+            authDomain: "xperts-data.firebaseapp.com",
+            projectId: "xperts-data",
+            storageBucket: "xperts-data.firebasestorage.app",
+            messagingSenderId: "934675149024",
+            appId: "1:934675149024:web:23486a5f38f65f103ce085"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+
+        // NEW config for Chat Data
+        const chatConfig = {
+            apiKey: "AIzaSyBlvGi0WpTOLP15IJR0R5Crr2S7Oz4bJm8",
+            authDomain: "chat-e40c3.firebaseapp.com",
+            projectId: "chat-e40c3",
+            storageBucket: "chat-e40c3.firebasestorage.app",
+            messagingSenderId: "1086403772895",
+            appId: "1:1086403772895:web:b4625a3cbf7c6c20b2046a"
+        };
+
+        // Initialize the default app for LOGIN
+        const loginApp = firebase.initializeApp(loginConfig);
+
+        // Initialize a NAMED app for CHAT
+        const chatApp = firebase.initializeApp(chatConfig, 'chatApp');
+
+        // Get a reference to each database
+        const loginDb = loginApp.firestore();
+        const chatDb = chatApp.firestore();
+        
+        // --- 2. JAVASCRIPT LOGIC ---
 
         document.getElementById('login-container').innerHTML = `<h1>Chat Login</h1><form id="login-form"><div class="input-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" required></div><div class="input-group"><label for="password">Password</label><input type="password" id="password" required></div><button type="submit" id="login-btn">Login</button></form><p id="error-message"></p>`;
         
@@ -141,7 +149,8 @@
             if (!mobile || !password) { showError("Please fill all fields."); return; }
             setLoginLoading(true);
             try {
-                const querySnapshot = await db.collection('users').where('mobileNumber', '==', mobile).get();
+                // Use the LOGIN database here
+                const querySnapshot = await loginDb.collection('users').where('mobileNumber', '==', mobile).get();
                 if (querySnapshot.empty) { throw new Error("Invalid details"); }
                 const userDoc = querySnapshot.docs[0];
                 const userData = userDoc.data();
@@ -167,7 +176,8 @@
         async function sendMessage(messageData) {
             if (!currentUser || !currentClass) return;
             try {
-                await db.collection('messages').add({
+                // Use the CHAT database here
+                await chatDb.collection('messages').add({
                     text: messageData.text,
                     senderName: currentUser.fullName,
                     senderMobile: currentUser.mobileNumber,
@@ -179,7 +189,8 @@
 
         function loadMessages() {
             if (unsubscribeMessages) unsubscribeMessages();
-            const messagesRef = db.collection('messages').where('class', '==', currentClass).orderBy('createdAt', 'asc');
+            // Use the CHAT database here
+            const messagesRef = chatDb.collection('messages').where('class', '==', currentClass).orderBy('createdAt', 'asc');
             unsubscribeMessages = messagesRef.onSnapshot(snapshot => {
                 snapshot.docChanges().forEach(change => {
                     const doc = change.doc, data = doc.data();
@@ -195,7 +206,7 @@
                 scrollToBottom();
             }, error => {
                 console.error("Error fetching messages:", error);
-                messagesContainer.innerHTML = `<p style="color:red; text-align:center;">Error. A Firestore index is likely required. Check browser console (F12) for a link.</p>`;
+                messagesContainer.innerHTML = `<p style="color:red; text-align:center;">Error fetching messages from chat database. A Firestore index is likely required. Check browser console (F12) for a link.</p>`;
             });
         }
         
@@ -205,24 +216,19 @@
              const messageGroup = document.createElement('div');
              messageGroup.id = doc.id;
              messageGroup.classList.add('message-group', isSent ? 'sent' : 'received');
-             
              const senderNameEl = document.createElement('div');
              senderNameEl.className = 'message-sender-name';
              senderNameEl.textContent = data.senderName;
-             
              const messageEl = document.createElement('div');
              messageEl.classList.add('message');
              messageEl.textContent = data.text;
-             
              messageGroup.appendChild(senderNameEl);
              messageGroup.appendChild(messageEl);
-
              messageEl.addEventListener('contextmenu', e => e.preventDefault());
              messageEl.addEventListener('mousedown', (e) => startLongPress(e, doc));
              messageEl.addEventListener('touchstart', (e) => startLongPress(e, doc));
              messageEl.addEventListener('mouseup', cancelLongPress);
              messageEl.addEventListener('touchend', cancelLongPress);
-             
              messagesContainer.appendChild(messageGroup);
              if(!isUpdate) scrollToBottom();
         }
@@ -253,13 +259,22 @@
 
         deleteMeBtn.addEventListener('click', async () => {
             if (!selectedMessage.id) return;
-            try { await db.collection('messages').doc(selectedMessage.id).update({ deletedFor: firebase.firestore.FieldValue.arrayUnion(currentUser.mobileNumber) }); } catch (error) { console.error("Error deleting for me: ", error); }
+            try {
+                // Use the CHAT database here
+                await chatDb.collection('messages').doc(selectedMessage.id).update({ 
+                    deletedFor: firebase.firestore.FieldValue.arrayUnion(currentUser.mobileNumber) 
+                });
+            } catch (error) { console.error("Error deleting for me: ", error); }
             hideMessageMenu();
         });
+
         deleteEveryoneBtn.addEventListener('click', async () => {
             if (!selectedMessage.id || selectedMessage.data.senderMobile !== currentUser.mobileNumber) return;
             if (confirm("Delete this message for everyone? This cannot be undone.")) {
-                try { await db.collection('messages').doc(selectedMessage.id).delete(); } catch (error) { console.error("Error deleting for everyone: ", error); }
+                try {
+                    // Use the CHAT database here
+                    await chatDb.collection('messages').doc(selectedMessage.id).delete();
+                } catch (error) { console.error("Error deleting for everyone: ", error); }
             }
             hideMessageMenu();
         });
