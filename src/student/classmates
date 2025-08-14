@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Firebase Chat</title>
+    <style>
+        :root {
+            --primary-bg: #EDF1FB;
+            --secondary-bg: #FFFFFF;
+            --accent-color: #0265DA;
+            --sent-bg: #E1FADF;
+            --received-bg: #FFFFFF;
+            --primary-text: #050505;
+            --secondary-text: #65676b;
+            --error-color: #e74c3c;
+            --border-color: #E0E0E0;
+            --input-bg: #F0F2F5;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; padding: 0; background-color: #d0d8e8; display: flex;
+            justify-content: center; align-items: center; height: 100vh;
+        }
+        #app-container {
+            width: 100%; max-width: 370px; height: 100vh; max-height: 800px;
+            background-color: var(--secondary-bg);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); display: flex;
+            flex-direction: column; overflow: hidden; position: relative;
+        }
+
+        /* --- Login Screen --- */
+        #login-container { padding: 40px 20px; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        #login-container h1 { text-align: center; color: var(--accent-color); margin-bottom: 30px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: var(--secondary-text); font-size: 14px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        #login-btn { width: 100%; padding: 12px; background-color: var(--accent-color); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; transition: opacity 0.2s; }
+        #login-btn:hover { opacity: 0.9; }
+        #login-btn:disabled { background-color: #99cfff; cursor: not-allowed; }
+        #error-message { color: var(--error-color); text-align: center; margin-top: 15px; height: 20px; font-size: 14px; }
+
+        /* --- Chat Screen --- */
+        #chat-container { display: none; flex-direction: column; height: 100%; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: var(--accent-color); color: white; flex-shrink: 0; }
+        #chat-title { font-weight: bold; font-size: 18px; margin: 0; }
+        #logout-btn { background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        
+        #messages-container { flex-grow: 1; padding: 15px; overflow-y: auto; background-color: var(--primary-bg); display: flex; flex-direction: column; }
+        
+        .message-group { display: flex; flex-direction: column; margin-bottom: 12px; max-width: 85%; }
+        .message-group.sent { align-self: flex-end; }
+        .message-group.received { align-self: flex-start; }
+        .message-sender-name { font-size: 13px; font-weight: 600; color: var(--accent-color); margin-bottom: 4px; padding: 0 8px; }
+        .message { padding: 10px 14px; border-radius: 20px; word-wrap: break-word; user-select: none; position: relative; line-height: 1.4; }
+        .message-group.sent .message { background-color: var(--sent-bg); align-self: flex-end; border-bottom-right-radius: 5px; }
+        .message-group.received .message { background-color: var(--received-bg); align-self: flex-start; border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+        /* --- Modern Message Form --- */
+        #message-form { display: flex; padding: 10px; background-color: var(--secondary-bg); flex-shrink: 0; align-items: center; gap: 10px; }
+        #message-input { flex-grow: 1; background-color: var(--input-bg); border: none; border-radius: 20px; padding: 12px 18px; font-size: 16px; }
+        #send-btn { background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        #send-btn svg { width: 22px; height: 22px; fill: white; margin-left: 2px; }
+
+        /* --- Context Menu --- */
+        #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 199; display: none; }
+        #message-menu { position: absolute; background: white; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); z-index: 200; display: none; padding: 5px 0; min-width: 180px; }
+        .menu-option { padding: 10px 20px; cursor: pointer; font-size: 15px; }
+        .menu-option:hover { background: #f1f1f1; }
+        .menu-option.danger { color: var(--error-color); }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <!-- Login View -->
+        <div id="login-container"></div>
+
+        <!-- Chat View -->
+        <div id="chat-container">
+            <div class="chat-header">
+                <h1 id="chat-title">Chat</h1>
+                <button id="logout-btn">Logout</button>
+            </div>
+            <div id="messages-container"></div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" id="send-btn" title="Send message">
+                    <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                </button>
+            </form>
+        </div>
+        
+        <!-- Context Menu -->
+        <div id="menu-overlay"></div>
+        <div id="message-menu">
+             <div id="delete-me-btn" class="menu-option">Delete for Me</div>
+             <div id="delete-everyone-btn" class="menu-option danger">Delete for Everyone</div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com",
+            projectId: "xperts-data", storageBucket: "xperts-data.firebasestorage.app",
+            messagingSenderId: "934675149024", appId: "1:934675149024:web:23486a5f38f65f103ce085",
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.getElementById('login-container').innerHTML = `<h1>Chat Login</h1><form id="login-form"><div class="input-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" required></div><div class="input-group"><label for="password">Password</label><input type="password" id="password" required></div><button type="submit" id="login-btn">Login</button></form><p id="error-message"></p>`;
+        
+        let currentUser = null, currentClass = null, unsubscribeMessages = null;
+        let longPressTimer;
+        let selectedMessage = { id: null, element: null, data: null };
+        
+        const loginContainer = document.getElementById('login-container');
+        const chatContainer = document.getElementById('chat-container');
+        const loginForm = document.getElementById('login-form');
+        const mobileInput = document.getElementById('mobile');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('login-btn');
+        const errorMessage = document.getElementById('error-message');
+        const chatTitle = document.getElementById('chat-title');
+        const logoutBtn = document.getElementById('logout-btn');
+        const messagesContainer = document.getElementById('messages-container');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const messageMenu = document.getElementById('message-menu');
+        const deleteMeBtn = document.getElementById('delete-me-btn');
+        const deleteEveryoneBtn = document.getElementById('delete-everyone-btn');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mobile = mobileInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!mobile || !password) { showError("Please fill all fields."); return; }
+            setLoginLoading(true);
+            try {
+                const querySnapshot = await db.collection('users').where('mobileNumber', '==', mobile).get();
+                if (querySnapshot.empty) { throw new Error("Invalid details"); }
+                const userDoc = querySnapshot.docs[0];
+                const userData = userDoc.data();
+                if (userData.password === password && userData.isAllowed) {
+                    currentClass = userData.class || "General";
+                    currentUser = { id: userDoc.id, fullName: userData.fullName, mobileNumber: userData.mobileNumber, class: currentClass };
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    showChatView();
+                } else if (!userData.isAllowed) { throw new Error("Account not permitted."); }
+                else { throw new Error("Invalid details"); }
+            } catch (error) { showError(error.message); } 
+            finally { setLoginLoading(false); }
+        });
+
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageText = messageInput.value.trim();
+            if (messageText === '' || !currentUser) return;
+            sendMessage({ text: messageText });
+            messageInput.value = '';
+        });
+
+        async function sendMessage(messageData) {
+            if (!currentUser || !currentClass) return;
+            try {
+                await db.collection('messages').add({
+                    text: messageData.text,
+                    senderName: currentUser.fullName,
+                    senderMobile: currentUser.mobileNumber,
+                    class: currentClass,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (error) { console.error("Error sending message:", error); }
+        }
+
+        function loadMessages() {
+            if (unsubscribeMessages) unsubscribeMessages();
+            const messagesRef = db.collection('messages').where('class', '==', currentClass).orderBy('createdAt', 'asc');
+            unsubscribeMessages = messagesRef.onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    const doc = change.doc, data = doc.data();
+                    const el = document.getElementById(doc.id);
+                    if (data.deletedFor && data.deletedFor.includes(currentUser.mobileNumber)) {
+                        if (el) el.remove();
+                        return;
+                    }
+                    if (change.type === "added") { if (!el) renderMessage(doc); }
+                    if (change.type === "modified") { if (el) el.remove(); renderMessage(doc, true); }
+                    if (change.type === "removed") { if (el) el.remove(); }
+                });
+                scrollToBottom();
+            }, error => {
+                console.error("Error fetching messages:", error);
+                messagesContainer.innerHTML = `<p style="color:red; text-align:center;">Error. A Firestore index is likely required. Check browser console (F12) for a link.</p>`;
+            });
+        }
+        
+        function renderMessage(doc, isUpdate = false) {
+             const data = doc.data();
+             const isSent = data.senderMobile === currentUser.mobileNumber;
+             const messageGroup = document.createElement('div');
+             messageGroup.id = doc.id;
+             messageGroup.classList.add('message-group', isSent ? 'sent' : 'received');
+             
+             const senderNameEl = document.createElement('div');
+             senderNameEl.className = 'message-sender-name';
+             senderNameEl.textContent = data.senderName;
+             
+             const messageEl = document.createElement('div');
+             messageEl.classList.add('message');
+             messageEl.textContent = data.text;
+             
+             messageGroup.appendChild(senderNameEl);
+             messageGroup.appendChild(messageEl);
+
+             messageEl.addEventListener('contextmenu', e => e.preventDefault());
+             messageEl.addEventListener('mousedown', (e) => startLongPress(e, doc));
+             messageEl.addEventListener('touchstart', (e) => startLongPress(e, doc));
+             messageEl.addEventListener('mouseup', cancelLongPress);
+             messageEl.addEventListener('touchend', cancelLongPress);
+             
+             messagesContainer.appendChild(messageGroup);
+             if(!isUpdate) scrollToBottom();
+        }
+
+        function startLongPress(event, doc) {
+            cancelLongPress();
+            longPressTimer = setTimeout(() => { event.preventDefault(); showMessageMenu(event, doc); }, 700);
+        }
+        function cancelLongPress() { clearTimeout(longPressTimer); }
+        
+        function showMessageMenu(event, doc) {
+            const messageElement = event.currentTarget;
+            selectedMessage = { id: doc.id, element: messageElement, data: doc.data() };
+            deleteEveryoneBtn.style.display = selectedMessage.data.senderMobile === currentUser.mobileNumber ? 'block' : 'none';
+            const menu = messageMenu;
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            let top = clientY + 5, left = clientX - (menu.offsetWidth / 2);
+            if (left + menu.offsetWidth > window.innerWidth) left = window.innerWidth - menu.offsetWidth - 10;
+            if (top + menu.offsetHeight > window.innerHeight) top = clientY - menu.offsetHeight - 5;
+            if (left < 10) left = 10;
+            menu.style.top = `${top}px`; menu.style.left = `${left}px`;
+            menu.style.display = 'block'; menuOverlay.style.display = 'block';
+        }
+        
+        function hideMessageMenu() { messageMenu.style.display = 'none'; menuOverlay.style.display = 'none'; }
+        menuOverlay.addEventListener('click', hideMessageMenu);
+
+        deleteMeBtn.addEventListener('click', async () => {
+            if (!selectedMessage.id) return;
+            try { await db.collection('messages').doc(selectedMessage.id).update({ deletedFor: firebase.firestore.FieldValue.arrayUnion(currentUser.mobileNumber) }); } catch (error) { console.error("Error deleting for me: ", error); }
+            hideMessageMenu();
+        });
+        deleteEveryoneBtn.addEventListener('click', async () => {
+            if (!selectedMessage.id || selectedMessage.data.senderMobile !== currentUser.mobileNumber) return;
+            if (confirm("Delete this message for everyone? This cannot be undone.")) {
+                try { await db.collection('messages').doc(selectedMessage.id).delete(); } catch (error) { console.error("Error deleting for everyone: ", error); }
+            }
+            hideMessageMenu();
+        });
+
+        function showChatView() { chatTitle.textContent = `${currentClass} Chat`; loginContainer.style.display = 'none'; chatContainer.style.display = 'flex'; loadMessages(); }
+        function showLoginView() { chatContainer.style.display = 'none'; loginContainer.style.display = 'flex'; passwordInput.value = ''; }
+        logoutBtn.addEventListener('click', () => { if (unsubscribeMessages) unsubscribeMessages(); currentUser = null; currentClass = null; sessionStorage.removeItem('currentUser'); showLoginView(); });
+        function showError(message) { errorMessage.textContent = message; }
+        function setLoginLoading(isLoading) { loginBtn.disabled = isLoading; loginBtn.textContent = isLoading ? 'Logging in...' : 'Login'; }
+        function scrollToBottom() { messagesContainer.scrollTop = messagesContainer.scrollHeight; }
+
+        function checkSession() {
+            const savedUserJson = sessionStorage.getItem('currentUser');
+            if (savedUserJson) {
+                const savedUser = JSON.parse(savedUserJson);
+                if (savedUser.class) { currentUser = savedUser; currentClass = savedUser.class; showChatView(); } 
+                else { logoutBtn.click(); }
+            } else { showLoginView(); }
+        }
+        checkSession();
+    </script>
+</body>
+</html>
