@@ -170,7 +170,7 @@
                     localStorage.setItem('loggedInUserId', userData.id); localStorage.setItem('loggedInUserRole', userData.role); localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
                     const isAllowed = userData.isAllowed; let redirectUrl = 'https://nokia.com';
                     switch (userData.role) {
-                        case 'Student': redirectUrl = isAllowed ? 'https://tv.apple.com' : 'https://nokia.com'; break;
+                        case 'Student': redirectUrl = isAllowed ? 'https://xperts-app.github.io/server/next.js/home/verified' : 'https://nokia.com'; break;
                         case 'Teacher': redirectUrl = 'https://apple.com'; break;
                         case 'Admin': redirectUrl = '3.html'; break;
                     }
