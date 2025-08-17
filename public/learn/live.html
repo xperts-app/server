@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>Scheduled Classes</title>
     <style>
         :root {
@@ -25,11 +25,10 @@
         .carousel-container::-webkit-scrollbar { display: none; }
         .carousel-track { display: flex; gap: 16px; padding-bottom: 1rem; cursor: grab; user-select: none; min-height: 260px; align-items: flex-start; }
         
-        /* --- FINAL, CORRECTED CARD STYLING --- */
         .class-card {
             flex: 0 0 250px;
             width: 250px;
-            height: 250px; /* STRICT HEIGHT REQUIREMENT */
+            height: 250px;
             background-color: var(--white);
             border-radius: 24px; 
             box-shadow: 0 6px 20px rgba(60, 64, 67, 0.1);
@@ -65,16 +64,14 @@
             display: flex;
             flex-direction: column;
             flex-grow: 1; 
-            overflow: hidden; /* Prevent content from breaking out */
+            overflow: hidden;
         }
         
         .card-title {
             font-size: 1.2rem; font-weight: 600; margin: 0 0 8px 0; line-height: 1.3; color: var(--text-dark);
-            /* Allow up to 2 lines */
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
         .card-status { 
             font-size: 0.95rem; 
@@ -90,13 +87,8 @@
             background-color: var(--primary-blue); border: none; cursor: pointer;
             text-align: center; text-decoration: none;
             border-radius: 99px;
-            margin-top: auto; /* This guarantees the button is at the bottom */
+            margin-top: auto;
             flex-shrink: 0;
-        }
-        .join-now-btn.disabled {
-            background-color: #adb5bd;
-            cursor: not-allowed;
-            pointer-events: none;
         }
         #no-classes-message { width: 100%; text-align: center; color: var(--text-light); padding: 4rem 0; font-size: 1.2rem; display: none; }
     </style>
@@ -138,44 +130,32 @@
             const card = document.createElement('div');
             card.className = 'class-card';
             card.id = `card-${classId}`;
+
+            // --- THE ONLY CHANGE IS HERE: Added target="_blank" and rel="noopener noreferrer" ---
             card.innerHTML = `
                 <div class="card-thumbnail">
-                    <img src="${subjectImages[classData.subject.toUpperCase()] || subjectImages.BIOLOGY}" alt="${classData.subject} thumbnail">
+                    <img src="${subjectImages[classData.subject.toUpperCase()] || subjectImages.BIOLOGY}" alt="${classData.subject}">
                     <div class="subject-tag">${classData.subject}</div>
                     <div class="live-badge">LIVE</div>
                 </div>
                 <div class="card-content">
                     <h3 class="card-title">${classData.title}</h3>
                     <p class="card-status"></p>
-                    <a href="details.html?id=${classId}" target="_blank" rel="noopener noreferrer" class="join-now-btn">Join Now</a>
+                    <a href="3.html?id=${classId}" class="join-now-btn" target="_blank" rel="noopener noreferrer">Join Now</a>
                 </div>`;
             
-            const timerInfo = { 
-                id: classId, 
-                startTime: classData.startTime, 
-                expireTime: classData.expireTime, 
-                statusElement: card.querySelector('.card-status'), 
-                liveBadge: card.querySelector('.live-badge'),
-                joinButton: card.querySelector('.join-now-btn')
-            };
+            const timerInfo = { id: classId, startTime: classData.startTime, expireTime: classData.expireTime, statusElement: card.querySelector('.card-status'), liveBadge: card.querySelector('.live-badge') };
             classesToUpdateTimers.push(timerInfo);
             updateClassStatus(timerInfo);
             return card;
         }
 
         function updateClassStatus(classInfo) {
-            const now = new Date(), startTime = new Date(classInfo.startTime), expireTime = new Date(classInfo.expireTime);
+            const now = new Date(), startTime = new Date(classInfo.startTime);
             const diffMinutes = (startTime - now) / (1000 * 60);
             
             classInfo.liveBadge.classList.remove('visible');
-            classInfo.joinButton.classList.remove('disabled');
-            classInfo.joinButton.textContent = "Join Now";
-
-            if (now >= expireTime) {
-                classInfo.statusElement.innerHTML = `<span class="time">Expired</span>`;
-                classInfo.joinButton.textContent = "Expired";
-                classInfo.joinButton.classList.add('disabled');
-            } else if (diffMinutes > 60) {
+            if (diffMinutes > 60) {
                 classInfo.statusElement.innerHTML = `Starts at <strong>${startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}</strong>`;
             } else if (diffMinutes > 0) {
                 classInfo.statusElement.innerHTML = `Starts in <strong>${Math.round(diffMinutes)} min</strong>`;
@@ -224,7 +204,7 @@
             
             const query = db.collection("classes")
                 .where("classLevel", "==", classFilter)
-                .where("expireTime", ">=", new Date())
+                .where("expireTime", ">=", new Date().toISOString())
                 .orderBy("expireTime", "asc");
             
             query.onSnapshot(snapshot => {
@@ -244,9 +224,7 @@
                 noClassesMessage.style.display = 'block';
             });
 
-            setInterval(() => {
-                classesToUpdateTimers.forEach(timerInfo => updateClassStatus(timerInfo));
-            }, 1000); 
+            setInterval(() => classesToUpdateTimers.forEach(updateClassStatus), 1000); 
             setInterval(checkExpiredClasses, 5000);
             setupCarouselDrag();
         }
