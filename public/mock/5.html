@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <style>
+        :root {
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --color-blue-light: #e5f2ff;
+            --border-color: #e5e5ea;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); margin: 0; color: var(--text-primary); }
+        .header { background-color: var(--card-bg); padding: 12px 16px; display: flex; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .back-arrow { font-size: 28px; font-weight: bold; color: var(--text-primary); cursor: pointer; margin-right: 12px; text-decoration: none; }
+        .header h1 { font-size: 18px; margin: 0; }
+        .container { padding: 16px; }
+        .list-item { display: flex; align-items: center; background: var(--card-bg); padding: 16px; margin-bottom: 10px; border-radius: 12px; }
+        .rank { font-size: 18px; font-weight: 600; color: var(--text-secondary); min-width: 50px; text-align: center; }
+        .name { flex-grow: 1; font-weight: 500; font-size: 16px; }
+        .score { font-size: 18px; font-weight: 600; color: var(--text-primary); }
+        .user-highlight { background-color: var(--color-blue-light); }
+        .medal { font-size: 24px; }
+        #loading { text-align: center; padding: 50px; font-size: 16px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <a href="#" onclick="history.back(); return false;" class="back-arrow">&larr;</a>
+    <h1 id="test-name-title">Leaderboard</h1>
+</div>
+
+<div class="container">
+    <div class="leaderboard-list" id="leaderboard-list"></div>
+    <p id="loading">Loading leaderboard...</p>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    // JS logic remains the same
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    async function loadLeaderboard() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const testId = urlParams.get('testId');
+        const currentUserId = localStorage.getItem('userId');
+        if (!testId) { document.getElementById('loading').textContent = 'Error: Test ID not found.'; return; }
+        try {
+            const resultsSnapshot = await db.collection('results').where('testId', '==', testId).orderBy('score', 'desc').get();
+            const leaderboardList = document.getElementById('leaderboard-list');
+            document.getElementById('loading').style.display = 'none';
+            if (resultsSnapshot.empty) { leaderboardList.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">No results found for this test yet.</p>'; return; }
+            document.getElementById('test-name-title').textContent = resultsSnapshot.docs[0].data().testName;
+            resultsSnapshot.forEach((doc, index) => {
+                const result = doc.data();
+                const rank = index + 1;
+                const item = document.createElement('div');
+                item.className = 'list-item';
+                let rankDisplay;
+                if (rank === 1) rankDisplay = '<span class="medal">🥇</span>';
+                else if (rank === 2) rankDisplay = '<span class="medal">🥈</span>';
+                else if (rank === 3) rankDisplay = '<span class="medal">🥉</span>';
+                else rankDisplay = rank;
+                if (result.userId === currentUserId) item.classList.add('user-highlight');
+                item.innerHTML = `<div class="rank">${rankDisplay}</div><div class="name">${result.studentName}</div><div class="score">${result.score}</div>`;
+                leaderboardList.appendChild(item);
+            });
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('loading').textContent = 'Could not load leaderboard.';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', loadLeaderboard);
+</script>
+
+</body>
+</html>
