@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taking Test</title>
+    <style>
+        :root {
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --color-blue: #007AFF;
+            --color-blue-light: #e5f2ff;
+            --color-gray: #8e8e93;
+            --color-green: #34C759;
+            --border-color: #e5e5ea;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); margin: 0; color: var(--text-primary); }
+        .header { background-color: var(--card-bg); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .header h2 { font-size: 17px; margin: 0; font-weight: 600; }
+        .timer { font-size: 17px; font-weight: 600; color: var(--text-primary); }
+        .container { padding: 16px; }
+        #name-prompt { display: flex; justify-content: center; align-items: center; height: 100vh; padding: 20px; box-sizing: border-box; }
+        #test-area, #loading { display: none; }
+        .question-panel { background: var(--card-bg); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .question-header { font-size: 16px; font-weight: 600; margin-bottom: 20px; color: var(--text-secondary); }
+        .question-text { font-size: 18px; line-height: 1.5; margin-bottom: 25px;}
+        .question-image { max-width: 100%; border-radius: 8px; margin: 15px 0; }
+        .options-list { list-style-type: none; padding: 0; }
+        .options-list li { background: var(--bg-color); border: 2px solid var(--bg-color); border-radius: 12px; padding: 15px; margin-bottom: 12px; cursor: pointer; transition: background-color 0.2s, border-color 0.2s; font-weight: 500;}
+        .options-list li.selected { background-color: var(--color-blue-light); border-color: var(--color-blue); }
+        .navigation { display: flex; justify-content: space-between; padding: 10px 16px; background: var(--card-bg); position: fixed; bottom: 0; left: 0; width: 100%; box-sizing: border-box; border-top: 1px solid var(--border-color); }
+        .btn { padding: 14px 25px; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; }
+        .btn-primary { background-color: var(--color-blue); }
+        .btn-secondary { background-color: var(--color-gray); }
+        .btn-submit { background-color: var(--color-green); }
+        .btn:disabled { background-color: #cccccc; cursor: not-allowed; }
+        .name-prompt-box { background: var(--card-bg); padding: 30px; border-radius: 12px; text-align: center; width: 100%; max-width: 400px; }
+        .name-prompt-box input { width: 100%; padding: 12px; margin-top: 10px; margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; background: #f2f2f7;}
+        #loading { text-align: center; padding: 50px; font-size: 16px; color: var(--text-secondary); }
+        .warning-text { font-size: 12px; color: var(--text-secondary); margin-top: -5px; margin-bottom: 20px; text-align: left; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+<div id="name-prompt">
+    <div class="name-prompt-box">
+        <h2>Enter Your Name</h2>
+        <p style="color: var(--text-secondary);">Your name will be displayed on the leaderboard.</p>
+        <input type="text" id="studentName" placeholder="e.g., John Doe" required>
+        <p class="warning-text">We ask for your name only once. Please provide your correct name. In case of any abusive or harassing language, the Xperts team will terminate your account and may take legal action.</p>
+        <button class="btn btn-primary" onclick="startTest()">Start Test</button>
+    </div>
+</div>
+
+<div id="test-area">
+    <div class="header">
+        <h2 id="test-title">Test</h2>
+        <div class="timer" id="timer">00:00</div>
+    </div>
+    <div class="container">
+        <div class="question-panel">
+            <p class="question-header" id="question-header">Question 1/100</p>
+            <p class="question-text" id="question-text"></p>
+            <img id="question-image" src="" alt="Question Image" style="display:none;">
+            <ul class="options-list" id="options-list"></ul>
+        </div>
+    </div>
+    <div style="height: 80px;"></div>
+    <div class="navigation">
+        <button class="btn btn-secondary" id="prev-btn" onclick="prevQuestion()">Previous</button>
+        <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()">Next</button>
+        <button class="btn btn-submit" id="submit-btn" onclick="submitTest()">Submit</button>
+    </div>
+</div>
+
+<p id="loading">Loading Test...</p>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    // All JS logic remains the same.
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const urlParams = new URLSearchParams(window.location.search);
+    const testId = urlParams.get('testId');
+    let testData, currentQuestionIndex = 0, userAnswers = {}, timerInterval;
+    let userId = localStorage.getItem('userId') || `user_${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('userId', userId);
+
+    if (localStorage.getItem('studentName')) {
+        document.getElementById('name-prompt').style.display = 'none';
+        startTest();
+    }
+    async function startTest() {
+        let studentName = localStorage.getItem('studentName');
+        if (!studentName) {
+            studentName = document.getElementById('studentName').value.trim();
+            if (!studentName) return alert('Please enter your name.');
+            localStorage.setItem('studentName', studentName);
+        }
+        document.getElementById('name-prompt').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+        if (!testId) {
+            document.getElementById('loading').innerText = 'Error: Test ID not found.';
+            return;
+        }
+        try {
+            const doc = await db.collection('tests').doc(testId).get();
+            if (doc.exists) {
+                testData = doc.data();
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('test-area').style.display = 'block';
+                document.getElementById('test-title').textContent = testData.testName;
+                renderQuestion();
+                startTimer(testData.duration);
+            } else {
+                document.getElementById('loading').innerText = 'Error: Test not found.';
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('loading').innerText = 'Error loading test.';
+        }
+    }
+    function renderQuestion() {
+        const question = testData.questions[currentQuestionIndex];
+        document.getElementById('question-header').textContent = `QUESTION ${currentQuestionIndex + 1} OF ${testData.questions.length}`;
+        document.getElementById('question-text').textContent = question.questionText;
+        const qImg = document.getElementById('question-image');
+        qImg.style.display = question.questionImage ? 'block' : 'none';
+        qImg.src = question.questionImage || '';
+        const optionsList = document.getElementById('options-list');
+        optionsList.innerHTML = '';
+        question.options.forEach((opt, i) => {
+            const li = document.createElement('li');
+            li.dataset.index = i;
+            li.innerHTML = opt.optionText || (opt.optionImage ? `<img src="${opt.optionImage}" class="option-image" alt="Option Image">` : '');
+            li.onclick = () => selectOption(i);
+            if (userAnswers[currentQuestionIndex] === i) li.classList.add('selected');
+            optionsList.appendChild(li);
+        });
+        updateNavButtons();
+    }
+    function selectOption(index) { userAnswers[currentQuestionIndex] = index; renderQuestion(); }
+    function updateNavButtons() {
+        document.getElementById('prev-btn').disabled = currentQuestionIndex === 0;
+        const isLastQuestion = currentQuestionIndex === testData.questions.length - 1;
+        document.getElementById('next-btn').style.display = isLastQuestion ? 'none' : 'inline-block';
+        document.getElementById('submit-btn').style.display = isLastQuestion ? 'inline-block' : 'none';
+    }
+    function nextQuestion() { if (currentQuestionIndex < testData.questions.length - 1) { currentQuestionIndex++; renderQuestion(); } }
+    function prevQuestion() { if (currentQuestionIndex > 0) { currentQuestionIndex--; renderQuestion(); } }
+    function startTimer(duration) {
+        let timer = duration * 60;
+        const timerEl = document.getElementById('timer');
+        timerInterval = setInterval(() => {
+            let minutes = Math.floor(timer / 60);
+            let seconds = timer % 60;
+            timerEl.textContent = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            if (--timer < 0) { clearInterval(timerInterval); alert("Time's up!"); submitTest(); }
+        }, 1000);
+    }
+    async function submitTest() {
+        clearInterval(timerInterval);
+        if (!confirm("Are you sure you want to submit the test?")) return;
+        document.querySelectorAll('.navigation button').forEach(b => b.disabled = true);
+        let correct = 0, incorrect = 0;
+        testData.questions.forEach((q, i) => { if (userAnswers.hasOwnProperty(i)) { if (userAnswers[i] === q.correctAnswer) correct++; else incorrect++; } });
+        const resultData = { userId, studentName: localStorage.getItem('studentName'), testId, testName: testData.testName, score: correct * 4 - incorrect, totalMarks: testData.questions.length * 4, correctCount: correct, incorrectCount: incorrect, unattemptedCount: testData.questions.length - correct - incorrect, answers: userAnswers, submittedAt: firebase.firestore.FieldValue.serverTimestamp() };
+        try {
+            const docRef = await db.collection('results').add(resultData);
+            window.location.href = `4.html?resultId=${docRef.id}`;
+        } catch (error) {
+            console.error("Error:", error);
+            alert("Could not submit result.");
+            document.querySelectorAll('.navigation button').forEach(b => b.disabled = false);
+        }
+    }
+</script>
+</body>
+</html>
