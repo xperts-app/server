@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Result</title>
+    <style>
+        :root {
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --color-blue: #007AFF;
+            --color-green: #34C759;
+            --color-red: #FF3B30;
+            --color-gray: #8e8e93;
+            --border-color: #e5e5ea;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+        }
+        .result-header {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border: 8px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            margin: 0 auto 10px auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .score-circle .score { font-size: 48px; font-weight: bold; }
+        .score-circle .total { font-size: 18px; opacity: 0.8; border-top: 1px solid rgba(255, 255, 255, 0.5); padding-top: 5px; margin-top: 5px; }
+        .result-header h2 { margin: 0; font-weight: 500; }
+        .actions {
+            padding: 20px 16px;
+            display: flex;
+            gap: 12px;
+        }
+        .btn {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background-color: var(--card-bg);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-primary);
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: var(--color-blue);
+            color: white;
+            border-color: var(--color-blue);
+        }
+        .stats-container {
+            padding: 0 16px 20px 16px;
+        }
+        .stats-container h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        .stats-container p {
+            color: var(--text-secondary);
+            margin-top: -5px;
+            margin-bottom: 20px;
+        }
+        .stats-box {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 5px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats-box h4 { margin: 0; font-size: 16px; color: var(--text-primary); font-weight: 500; }
+        .stats-box .count { margin: 0; font-size: 24px; font-weight: bold; }
+        .correct { border-color: var(--color-green); }
+        .correct .count { color: var(--color-green); }
+        .incorrect { border-color: var(--color-red); }
+        .incorrect .count { color: var(--color-red); }
+        .unattempted { border-color: var(--color-gray); }
+        .unattempted .count { color: var(--color-gray); }
+        #loading { text-align: center; padding: 50px; font-size: 16px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+
+<div id="result-page" style="display: none;">
+    <div class="result-header">
+        <div class="score-circle">
+            <span class="score" id="score">0</span>
+            <span class="total" id="total-marks">/ 120</span>
+        </div>
+        <h2 id="class-average">Class average: --</h2>
+    </div>
+
+    <div class="actions">
+        <a href="#" id="view-solution-btn" class="btn">View Solution</a>
+        <a href="#" id="leaderboard-btn" class="btn btn-primary">Leaderboard</a>
+    </div>
+
+    <div class="stats-container">
+        <h3>Question details</h3>
+        <p>You've answered <span id="percent-correct">0%</span> questions correctly</p>
+        <div class="stats-box correct">
+            <h4>Correct</h4>
+            <p class="count" id="correct-count">0</p>
+        </div>
+        <div class="stats-box incorrect">
+            <h4>Incorrect</h4>
+            <p class="count" id="incorrect-count">0</p>
+        </div>
+        <div class="stats-box unattempted">
+            <h4>Unattempted</h4>
+            <p class="count" id="unattempted-count">100</p>
+        </div>
+    </div>
+</div>
+<p id="loading">Loading result...</p>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    // JS logic remains the same
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    async function loadResult() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultId = urlParams.get('resultId');
+        if (!resultId) { document.getElementById('loading').textContent = 'Error: Result ID not found.'; return; }
+        try {
+            const resultDoc = await db.collection('results').doc(resultId).get();
+            if (!resultDoc.exists) { document.getElementById('loading').textContent = 'Error: Result not found.'; return; }
+            const result = resultDoc.data();
+            document.getElementById('score').textContent = result.score;
+            document.getElementById('total-marks').textContent = `/ ${result.totalMarks}`;
+            const totalQuestions = result.correctCount + result.incorrectCount + result.unattemptedCount;
+            const percentCorrect = totalQuestions > 0 ? ((result.correctCount / totalQuestions) * 100).toFixed(0) : 0;
+            document.getElementById('percent-correct').textContent = `${percentCorrect}%`;
+            document.getElementById('correct-count').textContent = result.correctCount;
+            document.getElementById('incorrect-count').textContent = result.incorrectCount;
+            document.getElementById('unattempted-count').textContent = result.unattemptedCount;
+            document.getElementById('view-solution-btn').href = `6.html?resultId=${resultId}`;
+            document.getElementById('leaderboard-btn').href = `5.html?testId=${result.testId}`;
+            const allResultsSnapshot = await db.collection('results').where('testId', '==', result.testId).get();
+            let totalScore = 0;
+            allResultsSnapshot.forEach(doc => { totalScore += doc.data().score; });
+            const classAverage = allResultsSnapshot.size > 0 ? (totalScore / allResultsSnapshot.size).toFixed(2) : '--';
+            document.getElementById('class-average').textContent = `Class average: ${classAverage}`;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('result-page').style.display = 'block';
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('loading').textContent = 'Could not load result.';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', loadResult);
+</script>
+</body>
+</html>
