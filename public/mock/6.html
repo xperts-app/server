@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Solution</title>
+    <style>
+        :root {
+            --bg-color: #F0F2F5;
+            --card-bg: #FFFFFF;
+            --text-primary: #1c1c1e;
+            --text-secondary: #6e6e73;
+            --color-green: #34C759;
+            --color-green-light: #eaf8ee;
+            --color-red: #FF3B30;
+            --color-red-light: #ffebee;
+            --border-color: #e5e5ea;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); margin: 0; }
+        .header { background-color: var(--card-bg); padding: 12px 16px; display: flex; align-items: center; border-bottom: 1px solid var(--border-color); }
+        .back-arrow { font-size: 28px; font-weight: bold; color: var(--text-primary); cursor: pointer; margin-right: 12px; text-decoration: none; }
+        .header h1 { font-size: 18px; margin: 0; }
+        .container { padding: 16px; }
+        .question-review-card { background: var(--card-bg); border-radius: 12px; margin-bottom: 16px; padding: 20px; }
+        .question-header { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 20px; }
+        .question-text { font-size: 17px; line-height: 1.5; margin-bottom: 25px;}
+        .options-list { list-style: none; padding: 0; }
+        .options-list li { padding: 12px 15px; border-radius: 8px; margin-bottom: 10px; border: 2px solid transparent; font-weight: 500;}
+        .correct-answer { background-color: var(--color-green-light); border-color: var(--color-green); }
+        .wrong-answer { background-color: var(--color-red-light); border-color: var(--color-red); }
+        .solution-box { background-color: var(--bg-color); padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .solution-box h4 { margin-top: 0; font-size: 16px; }
+        .solution-box p { margin-bottom: 0; line-height: 1.6; color: var(--text-secondary); }
+        #loading { text-align: center; padding: 50px; font-size: 16px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+<div class="header">
+    <a href="#" onclick="history.back(); return false;" class="back-arrow">&larr;</a>
+    <h1>Test Solution</h1>
+</div>
+<div class="container" id="solution-container"></div>
+<p id="loading">Loading solutions...</p>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    // JS logic remains the same
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    async function loadSolution() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultId = urlParams.get('resultId');
+        if (!resultId) { document.getElementById('loading').textContent = 'Error: Result ID not found.'; return; }
+        try {
+            const resultDoc = await db.collection('results').doc(resultId).get();
+            if (!resultDoc.exists) { document.getElementById('loading').textContent = 'Error: Result not found.'; return; }
+            const resultData = resultDoc.data();
+            const testDoc = await db.collection('tests').doc(resultData.testId).get();
+            if (!testDoc.exists) { document.getElementById('loading').textContent = 'Error: Test data not found.'; return; }
+            const testData = testDoc.data();
+            const solutionContainer = document.getElementById('solution-container');
+            document.getElementById('loading').style.display = 'none';
+            testData.questions.forEach((q, i) => {
+                const card = document.createElement('div');
+                card.className = 'question-review-card';
+                let html = `<div class="question-header">QUESTION ${i + 1}</div><p class="question-text">${q.questionText}</p>`;
+                if (q.questionImage) html += `<img src="${q.questionImage}" style="max-width:100%; border-radius:8px;">`;
+                html += '<ul class="options-list">';
+                q.options.forEach((opt, optIndex) => {
+                    const isCorrect = optIndex === q.correctAnswer;
+                    const isUserChoice = resultData.answers[i] === optIndex;
+                    let liClass = '';
+                    if (isCorrect) liClass = 'correct-answer';
+                    else if (isUserChoice && !isCorrect) liClass = 'wrong-answer';
+                    html += `<li class="${liClass}">${opt.optionText}</li>`;
+                });
+                html += '</ul>';
+                if (q.solution) html += `<div class="solution-box"><h4>Solution</h4><p>${q.solution}</p></div>`;
+                card.innerHTML = html;
+                solutionContainer.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Error:", error);
+            document.getElementById('loading').textContent = 'Could not load solutions.';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', loadSolution);
+</script>
+</body>
+</html>
