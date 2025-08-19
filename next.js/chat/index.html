@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Firebase Chat</title>
+    <style>
+        :root {
+            --primary-bg: #EDF1FB; --secondary-bg: #FFFFFF; --accent-color: #0265DA;
+            --sent-bg: #E1FADF; --received-bg: #FFFFFF; --primary-text: #050505;
+            --secondary-text: #65676b; --error-color: #e74c3c; --border-color: #E0E0E0;
+            --input-bg: #F0F2F5; --seen-color: #4FC3F7;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: #d0d8e8; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #app-container { width: 100%; height: 100%; max-width: 768px; background-color: var(--secondary-bg); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        #login-container { padding: 40px 20px; display: flex; flex-direction: column; justify-content: center; height: 100%; }
+        #login-container h1 { text-align: center; color: var(--accent-color); margin-bottom: 30px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: var(--secondary-text); font-size: 14px; }
+        .input-group input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; }
+        #login-btn { width: 100%; padding: 12px; background-color: var(--accent-color); color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-top: 10px; }
+        #error-message { color: var(--error-color); text-align: center; margin-top: 15px; height: 20px; font-size: 14px; }
+        #chat-container { display: none; flex-direction: column; height: 100%; }
+        .chat-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; background-color: var(--accent-color); color: white; flex-shrink: 0; }
+        #chat-title { font-weight: bold; font-size: 18px; margin: 0; }
+        #logout-btn { background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        #messages-wrapper { position: relative; flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        #messages-container { flex-grow: 1; padding: 15px; overflow-y: auto; background-color: var(--primary-bg); display: flex; flex-direction: column; }
+        #typing-indicator { text-align: center; padding: 5px; font-size: 13px; color: var(--secondary-text); height: 25px; transition: opacity 0.3s; }
+        .message-group { display: flex; flex-direction: column; margin-bottom: 2px; max-width: 85%; }
+        .message-group.sent { align-self: flex-end; }
+        .message-group.received { align-self: flex-start; }
+        .message-sender-name { font-size: 13px; font-weight: 600; color: var(--accent-color); margin-bottom: 4px; padding: 0 8px; }
+        .message { padding: 8px 12px; border-radius: 18px; word-wrap: break-word; user-select: none; position: relative; line-height: 1.4; }
+        .message-group.sent .message { background-color: var(--sent-bg); border-bottom-right-radius: 5px; }
+        .message-group.received .message { background-color: var(--received-bg); border-bottom-left-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+        .message-meta { font-size: 11px; color: var(--secondary-text); float: right; margin-left: 8px; margin-top: 5px; user-select: none; }
+        .date-divider { text-align: center; font-size: 12px; color: var(--secondary-text); margin: 15px 0; }
+        .reactions-container { position: absolute; bottom: -10px; left: 5px; display: flex; gap: 2px; }
+        .reaction { background: var(--secondary-bg); border-radius: 10px; padding: 2px 6px; font-size: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .message-group.sent .reactions-container { right: 5px; left: auto; }
+        #message-form { display: flex; padding: 10px; align-items: center; gap: 10px; background: var(--secondary-bg); flex-shrink: 0; }
+        #message-input { flex-grow: 1; background-color: var(--input-bg); border: none; border-radius: 20px; padding: 12px 18px; font-size: 16px; }
+        #send-btn { background-color: var(--accent-color); color: white; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+        #menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 199; display: none; }
+        #message-menu { position: absolute; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); z-index: 200; display: none; padding: 5px; transform: translateX(-50%); }
+        .menu-reactions { display: flex; justify-content: center; padding: 5px; border-bottom: 1px solid var(--border-color); }
+        .menu-reaction-item { font-size: 24px; cursor: pointer; padding: 4px 8px; border-radius: 8px; transition: transform 0.1s; }
+        .menu-reaction-item:hover { transform: scale(1.2); }
+        .menu-options { padding: 5px 0; }
+        .menu-option { padding: 10px 20px; cursor: pointer; font-size: 15px; } .menu-option:hover { background: #f1f1f1; }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div id="login-container"></div>
+        <div id="chat-container">
+            <div class="chat-header"><h1 id="chat-title">Chat</h1><button id="logout-btn">Logout</button></div>
+            <div id="messages-wrapper">
+                <div id="messages-container"></div>
+                <div id="typing-indicator"></div>
+            </div>
+            <form id="message-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off">
+                <button type="submit" id="send-btn" title="Send message">
+                    <svg viewBox="0 0 24 24" style="fill:white; width:22px; margin-left:2px;"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                </button>
+            </form>
+        </div>
+        <div id="menu-overlay"></div>
+        <div id="message-menu">
+            <div class="menu-reactions"></div>
+            <div class="menu-options">
+                 <div id="delete-me-btn" class="menu-option">Delete for Me</div>
+                 <div id="delete-everyone-btn" class="menu-option" style="color:var(--error-color)">Delete for Everyone</div>
+            </div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        // --- 1. DUAL FIREBASE CONFIG ---
+        const loginConfig = { apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", authDomain: "xperts-data.firebaseapp.com", projectId: "xperts-data" };
+        const chatConfig = { apiKey: "AIzaSyBlvGi0WpTOLP15IJR0R5Crr2S7Oz4bJm8", authDomain: "chat-e40c3.firebaseapp.com", projectId: "chat-e40c3" };
+        const loginApp = firebase.initializeApp(loginConfig);
+        const chatApp = firebase.initializeApp(chatConfig, 'chatApp');
+        const loginDb = loginApp.firestore();
+        const chatDb = chatApp.firestore();
+        
+        // --- 2. DOM & STATE VARIABLES ---
+        document.getElementById('login-container').innerHTML = `<h1>Chat Login</h1><form id="login-form"><div class="input-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" required></div><div class="input-group"><label for="password">Password</label><input type="password" id="password" required></div><button type="submit" id="login-btn">Login</button></form><p id="error-message"></p>`;
+        let currentUser = null, currentClass = null, unsubscribeMessages = null, unsubscribeTyping = null;
+        let selectedMessage = {}, typingTimeout = null, lastMessageDate = null;
+        const availableReactions = ['❤️', '👍', '😂', '😢', '🙏'];
+
+        const dom = {
+            loginContainer: document.getElementById('login-container'), chatContainer: document.getElementById('chat-container'),
+            loginForm: document.getElementById('login-form'), mobileInput: document.getElementById('mobile'), passwordInput: document.getElementById('password'),
+            loginBtn: document.getElementById('login-btn'), errorMessage: document.getElementById('error-message'),
+            chatTitle: document.getElementById('chat-title'), logoutBtn: document.getElementById('logout-btn'),
+            messagesContainer: document.getElementById('messages-container'), messageForm: document.getElementById('message-form'),
+            messageInput: document.getElementById('message-input'), menuOverlay: document.getElementById('menu-overlay'),
+            messageMenu: document.getElementById('message-menu'), menuReactions: document.querySelector('.menu-reactions'),
+            deleteMeBtn: document.getElementById('delete-me-btn'), deleteEveryoneBtn: document.getElementById('delete-everyone-btn'),
+            typingIndicator: document.getElementById('typing-indicator')
+        };
+
+        // --- 3. LOGIN & SESSION ---
+        dom.loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const mobile = dom.mobileInput.value.trim(), password = dom.passwordInput.value.trim();
+            try {
+                const querySnapshot = await loginDb.collection('users').where('mobileNumber', '==', mobile).get();
+                if (querySnapshot.empty) { throw new Error("Invalid details"); }
+                const userDoc = querySnapshot.docs[0], userData = userDoc.data();
+                if (userData.password === password && userData.isAllowed) {
+                    currentClass = userData.class || "General";
+                    currentUser = { id: userDoc.id, fullName: userData.fullName, mobileNumber: userData.mobileNumber, class: currentClass };
+                    sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                    showChatView();
+                } else { throw new Error(userData.isAllowed ? "Invalid details" : "Account not permitted."); }
+            } catch (error) { showError(error.message); } 
+        });
+
+        // --- 4. MESSAGING ---
+        dom.messageForm.addEventListener('submit', (e) => { e.preventDefault(); sendMessage(); });
+        async function sendMessage() {
+            const messageText = dom.messageInput.value.trim();
+            if (messageText === '' || !currentUser) return;
+            dom.messageInput.value = '';
+            try { await chatDb.collection('messages').add({ text: messageText, senderName: currentUser.fullName, senderMobile: currentUser.mobileNumber, class: currentClass, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch (error) { console.error("Error sending message:", error); }
+        }
+
+        function loadMessages() {
+            if (unsubscribeMessages) unsubscribeMessages();
+            lastMessageDate = null; // Reset date for new class
+            const messagesRef = chatDb.collection('messages').where('class', '==', currentClass).orderBy('createdAt', 'asc');
+            unsubscribeMessages = messagesRef.onSnapshot(snapshot => {
+                dom.messagesContainer.innerHTML = ''; // Full re-render on change for simplicity
+                lastMessageDate = null;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.deletedFor || !data.deletedFor.includes(currentUser.mobileNumber)) {
+                        renderMessage(doc);
+                    }
+                });
+                scrollToBottom();
+            }, error => console.error("Error fetching messages:", error));
+            listenForTyping();
+        }
+        
+        function renderMessage(doc) {
+             const data = doc.data();
+             const isSent = data.senderMobile === currentUser.mobileNumber;
+             const messageDate = data.createdAt ? data.createdAt.toDate() : new Date();
+
+             if (!lastMessageDate || messageDate.toDateString() !== lastMessageDate.toDateString()) {
+                dom.messagesContainer.innerHTML += `<div class="date-divider">── ${formatDate(messageDate)} ──</div>`;
+                lastMessageDate = messageDate;
+             }
+
+             const messageGroup = document.createElement('div');
+             messageGroup.id = doc.id;
+             messageGroup.classList.add('message-group', isSent ? 'sent' : 'received');
+             
+             const senderName = `<div class="message-sender-name">${isSent ? "You" : data.senderName}</div>`;
+             
+             let reactionsHTML = '';
+             if (data.reactions) {
+                reactionsHTML += '<div class="reactions-container">';
+                for (const emoji in data.reactions) {
+                    if (data.reactions[emoji].length > 0) {
+                        reactionsHTML += `<div class="reaction">${emoji} ${data.reactions[emoji].length}</div>`;
+                    }
+                }
+                reactionsHTML += '</div>';
+             }
+             
+             const time = messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+             const messageMeta = `<span class="message-meta">${time}</span>`;
+             const messageEl = `<div class="message">${data.text}${messageMeta}${reactionsHTML}</div>`;
+             
+             messageGroup.innerHTML = senderName + messageEl;
+             dom.messagesContainer.appendChild(messageGroup);
+
+             messageGroup.querySelector('.message').addEventListener('contextmenu', e => { e.preventDefault(); showMessageMenu(e, doc); });
+        }
+        
+        // --- 5. TYPING INDICATOR ---
+        dom.messageInput.addEventListener('input', () => {
+            clearTimeout(typingTimeout);
+            updateTypingStatus(true);
+            typingTimeout = setTimeout(() => { updateTypingStatus(false); }, 2000);
+        });
+
+        async function updateTypingStatus(isTyping) {
+            const docRef = chatDb.collection('typing').doc(`${currentClass}_${currentUser.mobileNumber}`);
+            if (isTyping) {
+                const expiresAt = new Date(Date.now() + 10000); // Expires in 10 seconds
+                await docRef.set({ name: currentUser.fullName, class: currentClass, expiresAt: firebase.firestore.Timestamp.fromDate(expiresAt) });
+            } else {
+                await docRef.delete();
+            }
+        }
+        
+        function listenForTyping() {
+            if (unsubscribeTyping) unsubscribeTyping();
+            const query = chatDb.collection('typing').where('class', '==', currentClass);
+            unsubscribeTyping = query.onSnapshot(snapshot => {
+                const typingUsers = snapshot.docs
+                    .map(doc => doc.data().name)
+                    .filter(name => name !== currentUser.fullName);
+                
+                if (typingUsers.length === 0) {
+                    dom.typingIndicator.textContent = '';
+                } else if (typingUsers.length === 1) {
+                    dom.typingIndicator.textContent = `${typingUsers[0]} is typing...`;
+                } else {
+                    dom.typingIndicator.textContent = `${typingUsers.join(', ')} are typing...`;
+                }
+            });
+        }
+        
+        // --- 6. CONTEXT MENU & REACTIONS ---
+        function showMessageMenu(event, doc) {
+            selectedMessage = { id: doc.id, data: doc.data(), element: event.currentTarget };
+            const isSentByMe = selectedMessage.data.senderMobile === currentUser.mobileNumber;
+            dom.deleteEveryoneBtn.style.display = isSentByMe ? 'block' : 'none';
+            dom.menuReactions.innerHTML = availableReactions.map(emoji => `<div class="menu-reaction-item">${emoji}</div>`).join('');
+            dom.menuReactions.querySelectorAll('.menu-reaction-item').forEach(item => item.addEventListener('click', () => reactToMessage(item.textContent)));
+            
+            const menu = dom.messageMenu;
+            const rect = selectedMessage.element.getBoundingClientRect();
+            let top = rect.top - menu.offsetHeight - 10;
+            let left = rect.left + rect.width / 2;
+            menu.style.top = `${top < 10 ? rect.bottom + 10 : top}px`;
+            menu.style.left = `${left}px`;
+            menu.style.display = 'block'; dom.menuOverlay.style.display = 'block';
+        }
+        
+        async function reactToMessage(emoji) {
+            const docRef = chatDb.collection('messages').doc(selectedMessage.id);
+            const fieldPath = `reactions.${emoji}`;
+            const existingReactions = selectedMessage.data.reactions || {};
+            const reactedBy = existingReactions[emoji] || [];
+
+            if (reactedBy.includes(currentUser.fullName)) {
+                await docRef.update({ [fieldPath]: firebase.firestore.FieldValue.arrayRemove(currentUser.fullName) });
+            } else {
+                await docRef.update({ [fieldPath]: firebase.firestore.FieldValue.arrayUnion(currentUser.fullName) });
+            }
+            hideMessageMenu();
+        }
+        
+        function hideMessageMenu() { dom.messageMenu.style.display = 'none'; dom.menuOverlay.style.display = 'none'; }
+        dom.menuOverlay.addEventListener('click', hideMessageMenu);
+        dom.deleteMeBtn.addEventListener('click', async () => { await chatDb.collection('messages').doc(selectedMessage.id).update({ deletedFor: firebase.firestore.FieldValue.arrayUnion(currentUser.mobileNumber) }); hideMessageMenu(); });
+        dom.deleteEveryoneBtn.addEventListener('click', async () => { if (confirm("Delete this message for everyone?")) { await chatDb.collection('messages').doc(selectedMessage.id).delete(); } hideMessageMenu(); });
+        
+        // --- 7. UTILITY & LIFECYCLE ---
+        function formatDate(date) {
+            const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+            if (date.toDateString() === today.toDateString()) return 'Today';
+            if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+            return date.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        function showChatView() { dom.chatTitle.textContent = `${currentClass} Chat`; dom.loginContainer.style.display = 'none'; dom.chatContainer.style.display = 'flex'; loadMessages(); }
+        dom.logoutBtn.addEventListener('click', () => { if (unsubscribeMessages) unsubscribeMessages(); if(unsubscribeTyping) unsubscribeTyping(); currentUser = null; currentClass = null; sessionStorage.removeItem('currentUser'); showLoginView(); });
+        function showError(message) { dom.errorMessage.textContent = message; }
+        function scrollToBottom() { dom.messagesContainer.scrollTop = dom.messagesContainer.scrollHeight; }
+        function checkSession() { const savedUser = sessionStorage.getItem('currentUser'); if (savedUser) { const u = JSON.parse(savedUser); if(u.class){ currentUser=u; currentClass=u.class; showChatView();} } }
+        checkSession();
+    </script>
+</body>
+</html>
