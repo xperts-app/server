@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        :root { --primary-color: #1a73e8; --present-color: #34a853; --absent-color: #ea4335; --text-color: #3c4043; --light-gray: #f1f3f4; --border-color: #dadce0; }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--light-gray); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 420px; }
+        #login-container h1 { color: var(--primary-color); text-align: center; }
+        #login-form .form-group { margin-bottom: 1rem; text-align: left; }
+        #login-form label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: #5f6368; }
+        #login-form input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        #login-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 500; color: #fff; background-color: var(--primary-color); cursor: pointer; transition: background-color 0.3s; margin-top: 1rem; }
+        #login-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #login-error { color: var(--absent-color); margin-top: 1rem; min-height: 20px; font-weight: 500; text-align: center; }
+        #dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        #dashboard-header h2 { margin: 0; color: #202124; font-size: 1rem; font-weight: 500; }
+        #logout-btn { padding: 8px 16px; border: 1px solid var(--absent-color); color: var(--absent-color); background-color: transparent; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        #logout-btn:hover { background-color: var(--absent-color); color: #fff; }
+        #calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+        #month-year-display { font-size: 1.2rem; font-weight: 500; }
+        .nav-btn { background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #5f6368; padding: 0 10px; }
+        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day-name { font-weight: 500; color: #5f6368; font-size: 0.9rem; padding-bottom: 10px; }
+        
+        .date-cell {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 40px;
+            position: relative;
+            border-radius: 8px; /* Rounded corners for highlights */
+            transition: background-color 0.2s;
+        }
+        
+        /* --- NEW STYLES FOR BACKGROUND HIGHLIGHT --- */
+        .date-cell.present {
+            background-color: var(--present-color);
+            color: white;
+        }
+        .date-cell.absent {
+            background-color: var(--absent-color);
+            color: white;
+        }
+        
+        .date-number {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Today's date circle */
+        .date-cell.today .date-number {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+        }
+
+        /* If a day is today AND has attendance, hide the blue circle so the full highlight shows */
+        .date-cell.present.today .date-number,
+        .date-cell.absent.today .date-number {
+            background-color: transparent;
+        }
+        
+        #calendar-status { text-align: center; margin-top: 1rem; font-style: italic; color: #5f6368; min-height: 20px; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="login-container" class="container">
+        <h1>Student Portal Login</h1>
+        <form id="login-form">
+            <div class="form-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" required></div>
+            <div class="form-group"><label for="password">Password</label><input type="password" id="password" required></div>
+            <button type="submit" id="login-btn">Login</button>
+            <div id="login-error"></div>
+        </form>
+    </div>
+    <div id="dashboard-container" class="container hidden">
+        <div id="dashboard-header"><h2 id="welcome-message"></h2><button id="logout-btn">Logout</button></div>
+        <div id="calendar-container">
+            <div id="calendar-header">
+                <button id="prev-month-btn" class="nav-btn">&lt;</button><div id="month-year-display"></div><button id="next-month-btn" class="nav-btn">&gt;</button>
+            </div>
+            <div id="calendar-grid"></div><div id="calendar-status"></div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const firebaseConfig = {
+              apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+              authDomain: "xperts-data.firebaseapp.com",
+              projectId: "xperts-data",
+              storageBucket: "xperts-data.firebasestorage.app",
+              messagingSenderId: "934675149024",
+              appId: "1:93475149024:web:23486a5f38f65f103ce085",
+              measurementId: "G-6TS06NTDZQ"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+
+            const loginContainer = document.getElementById('login-container');
+            const dashboardContainer = document.getElementById('dashboard-container');
+            const loginForm = document.getElementById('login-form');
+            const mobileInput = document.getElementById('mobile');
+            const passwordInput = document.getElementById('password');
+            const loginBtn = document.getElementById('login-btn');
+            const loginError = document.getElementById('login-error');
+            const welcomeMessage = document.getElementById('welcome-message');
+            const logoutBtn = document.getElementById('logout-btn');
+            
+            let currentDate = new Date();
+
+            const handleLogin = async (event) => {
+                event.preventDefault();
+                loginError.textContent = '';
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'Logging in...';
+
+                const mobile = mobileInput.value.trim();
+                const password = passwordInput.value.trim();
+                
+                if (!mobile || !password) {
+                    loginError.textContent = 'Please enter mobile and password.';
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
+                    return;
+                }
+
+                try {
+                    const usersRef = db.collection('users');
+                    const snapshot = await usersRef.where('mobileNumber', '==', mobile).get();
+
+                    if (snapshot.empty) {
+                        loginError.textContent = 'No user found with this mobile number.';
+                        return;
+                    }
+
+                    const userDoc = snapshot.docs[0];
+                    const userData = userDoc.data();
+
+                    if (userData.password && userData.password === password) {
+                        if (userData.role && userData.role === 'Student') {
+                            sessionStorage.setItem('studentId', userDoc.id);
+                            sessionStorage.setItem('studentName', userData.fullName);
+                            showDashboard();
+                        } else {
+                            loginError.textContent = 'Access Denied. Only for students.';
+                        }
+                    } else {
+                        loginError.textContent = 'Invalid password. Please try again.';
+                    }
+                } catch (error) {
+                    console.error("CRITICAL ERROR DURING LOGIN:", error);
+                    loginError.textContent = 'A system error occurred. Check console.';
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
+                }
+            };
+            
+            const handleLogout = () => { sessionStorage.clear(); location.reload(); };
+
+            const showDashboard = () => {
+                loginContainer.classList.add('hidden');
+                dashboardContainer.classList.remove('hidden');
+                welcomeMessage.textContent = `Welcome, ${sessionStorage.getItem('studentName').trim()}!`;
+                renderCalendar(currentDate);
+            };
+
+            const showLoginView = () => {
+                loginContainer.classList.remove('hidden');
+                dashboardContainer.classList.add('hidden');
+            };
+
+            const renderCalendar = async (date) => {
+                const calendarGrid = document.getElementById('calendar-grid');
+                const monthYearDisplay = document.getElementById('month-year-display');
+                calendarGrid.innerHTML = '';
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                monthYearDisplay.textContent = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(day => { calendarGrid.innerHTML += `<div class="day-name">${day}</div>`; });
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const startOffset = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+                for (let i = 0; i < startOffset; i++) { calendarGrid.innerHTML += `<div class="date-cell empty"></div>`; }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const todayClass = (day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear()) ? ' today' : '';
+                    calendarGrid.innerHTML += `<div class="date-cell${todayClass}" data-date="${fullDate}"><div class="date-number">${day}</div></div>`;
+                }
+                await fetchAndApplyAttendance(year, month);
+            };
+            
+            const fetchAndApplyAttendance = async (year, month) => {
+                const studentId = sessionStorage.getItem('studentId');
+                const calendarStatus = document.getElementById('calendar-status');
+                if (!studentId) return;
+                calendarStatus.textContent = 'Loading attendance...';
+                const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+                try {
+                    const q = db.collection('attendance').where('studentId', '==', studentId).where('date', '>=', startDate).where('date', '<=', endDate);
+                    const snapshot = await q.get();
+                    if (snapshot.empty) { calendarStatus.textContent = 'No records found for this month.'; return; }
+                    const attendanceMap = new Map(snapshot.docs.map(doc => [doc.data().date, doc.data().status]));
+                    document.querySelectorAll('.date-cell[data-date]').forEach(cell => {
+                        const status = attendanceMap.get(cell.dataset.date);
+                        if (status) cell.classList.add(status.toLowerCase());
+                    });
+                    calendarStatus.textContent = '';
+                } catch (error) { console.error("Error fetching attendance:", error); calendarStatus.textContent = 'Error: Data could not load.'; }
+            };
+
+            document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(currentDate); });
+            document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(currentDate); });
+            loginForm.addEventListener('submit', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            if (sessionStorage.getItem('studentId')) { showDashboard(); } else { showLoginView(); }
+        });
+    </script>
+</body>
+</html>
