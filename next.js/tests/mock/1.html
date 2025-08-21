@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Create Test</title>
+    <style>
+        :root { --bg-color: #F0F2F5; --card-bg: #FFFFFF; --text-primary: #1c1c1e; --text-secondary: #6e6e73; --color-blue: #007AFF; --color-green: #34C759; --border-color: #e5e5ea; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: var(--card-bg); padding: 25px; border-radius: 12px; }
+        h1, h2 { color: var(--text-primary); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input[type="text"], input[type="url"], input[type="number"], select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); box-sizing: border-box; background-color: #f2f2f7; }
+        .btn { display: inline-block; padding: 12px 25px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: 600; text-decoration: none; color: white; }
+        .btn-primary { background-color: var(--color-blue); }
+        .btn-add { background-color: var(--color-green); }
+        #questions-container { margin-top: 30px; }
+        .question-card { background: var(--bg-color); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        #message { text-align: center; padding: 15px; margin-top: 20px; border-radius: 8px; display: none; }
+        .success { background-color: #eaf8ee; color: #28a745; }
+        .error { background-color: #ffebee; color: #c62828; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1 id="page-title">Create a New Test</h1>
+    <a href="7.html" class="btn btn-secondary" style="background-color: var(--text-secondary); margin-bottom: 20px;">Manage Tests</a>
+    <form id="test-form">
+        <!-- Form structure is the same -->
+        <div class="form-group"> <label for="testName">Test Name</label> <input type="text" id="testName" required> </div>
+        <div class="form-group"> <label for="className">Class</label> <input type="text" id="className" required> </div>
+        <div class="form-group"> <label for="duration">Duration (minutes)</label> <input type="number" id="duration" required> </div>
+        <h2>Questions</h2>
+        <div id="questions-container"></div>
+        <button type="button" class="btn btn-add" onclick="addQuestion()">Add Question</button>
+        <hr style="margin: 20px 0; border-color: var(--border-color);">
+        <button type="submit" class="btn btn-primary" id="save-btn">Save Test</button>
+    </form>
+    <div id="message"></div>
+</div>
+<!-- JS remains the same -->
+<template id="question-template"><div class="question-card"><h3 class="question-title">Question</h3><div class="form-group"><label>Question Text</label><input type="text" class="questionText"></div><div class="form-group"><label>Question Image URL (Optional)</label><input type="url" class="questionImage"></div><label>Options (Mark correct one)</label><div class="options"></div><div class="form-group" style="margin-top:15px;"><label>Detailed Solution</label><textarea class="solution"></textarea></div></div></template>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let questionCounter = 0;
+    let editTestId = null;
+    document.addEventListener('DOMContentLoaded', () => { const urlParams = new URLSearchParams(window.location.search); editTestId = urlParams.get('edit'); if (editTestId) { document.getElementById('page-title').textContent = 'Edit Test'; document.getElementById('save-btn').textContent = 'Update Test'; loadTestData(editTestId); } else { addQuestion(); } });
+    async function loadTestData(testId) { try { const doc = await db.collection('tests').doc(testId).get(); if (doc.exists) { const test = doc.data(); document.getElementById('testName').value = test.testName; document.getElementById('className').value = test.class; document.getElementById('duration').value = test.duration; test.questions.forEach(qData => { addQuestion(qData); }); } else { showMessage('Test not found.', 'error'); } } catch (error) { console.error("Error:", error); showMessage('Error loading test data.', 'error'); } }
+    function addQuestion(data = null) { const clone = document.getElementById('question-template').content.cloneNode(true); const qCard = clone.querySelector('.question-card'); qCard.querySelector('.question-title').textContent = `Question ${questionCounter + 1}`; qCard.dataset.id = questionCounter; const optionsContainer = clone.querySelector('.options'); for (let i = 0; i < 4; i++) { optionsContainer.innerHTML += `<div style="display:flex; align-items:center; margin-bottom:10px;"><input type="radio" name="correctAnswer_${questionCounter}" value="${i}" required style="width:auto; margin-right:10px;"><input type="text" class="optionText" placeholder="Opt ${i+1} Txt"><input type="url" class="optionImage" placeholder="Opt ${i+1} Img URL"></div>`; } if (data) { qCard.querySelector('.questionText').value = data.questionText || ''; qCard.querySelector('.questionImage').value = data.questionImage || ''; qCard.querySelector('.solution').value = data.solution || ''; const oTxts = qCard.querySelectorAll('.optionText'); const oImgs = qCard.querySelectorAll('.optionImage'); data.options.forEach((opt, i) => { oTxts[i].value = opt.optionText || ''; oImgs[i].value = opt.optionImage || ''; }); qCard.querySelector(`input[name="correctAnswer_${questionCounter}"][value="${data.correctAnswer}"]`).checked = true; } document.getElementById('questions-container').appendChild(clone); questionCounter++; }
+    document.getElementById('test-form').addEventListener('submit', async(e) => { e.preventDefault(); const testName = document.getElementById('testName').value; const className = document.getElementById('className').value; const duration = document.getElementById('duration').value; const questions = []; for (const card of document.querySelectorAll('.question-card')) { const options = []; const oTxts = card.querySelectorAll('.optionText'); const oImgs = card.querySelectorAll('.optionImage'); for (let i = 0; i < 4; i++) { options.push({ optionText: oTxts[i].value, optionImage: oImgs[i].value }); } const correctAns = card.querySelector(`input[type="radio"]:checked`); if (!correctAns) return showMessage(`Select correct answer for Question ${parseInt(card.dataset.id) + 1}.`, 'error'); questions.push({ questionText: card.querySelector('.questionText').value, questionImage: card.querySelector('.questionImage').value, options, correctAnswer: parseInt(correctAns.value), solution: card.querySelector('.solution').value }); } const testData = { testName, class: className, duration: parseInt(duration), questions, createdAt: firebase.firestore.FieldValue.serverTimestamp() }; try { if (editTestId) { await db.collection('tests').doc(editTestId).update(testData); showMessage('Test updated!', 'success'); } else { await db.collection('tests').add(testData); showMessage('Test saved!', 'success'); e.target.reset(); document.getElementById('questions-container').innerHTML = ''; questionCounter = 0; addQuestion(); } } catch (error) { console.error("Error:", error); showMessage('Error saving test.', 'error'); } });
+    function showMessage(msg, type) { const messageDiv = document.getElementById('message'); messageDiv.textContent = msg; messageDiv.className = type; messageDiv.style.display = 'block'; setTimeout(() => { messageDiv.style.display = 'none'; }, 4000); }
+</script>
+</body>
+</html>
