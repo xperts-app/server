@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Content Management</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --accent-color: #4A90E2; /* A nice blue for accents */
+            --border-color: #383838;
+            --delete-color: #E53E3E;
+            --edit-color: #F6AD55;
+            --green-color: #48BB78;
+        }
+        
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .dashboard-container { max-width: 1400px; margin: 0 auto; }
+        h1 { color: var(--text-primary); text-align: left; margin-bottom: 20px; }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .filter-group { display: flex; align-items: center; gap: 10px; }
+        .filter-group label { color: var(--text-secondary); }
+        select, input[type="search"] {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        input[type="search"] { width: 300px; }
+        
+        .subject-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .tab-btn:hover { color: var(--text-primary); }
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .table-container {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        #content-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        #content-table thead th {
+            text-align: left;
+            padding: 12px 15px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            font-weight: 600;
+            font-size: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #content-table tbody tr {
+            transition: background-color 0.2s;
+        }
+        #content-table tbody tr:hover {
+            background-color: var(--bg-tertiary);
+        }
+        #content-table tbody td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #content-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .content-type-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .badge-video { background-color: rgba(74, 144, 226, 0.2); color: #4A90E2; }
+        .badge-pdf { background-color: rgba(168, 85, 247, 0.2); color: #A855F7; }
+
+        .actions { display: flex; gap: 15px; }
+        .action-btn { background: none; border: none; cursor: pointer; font-size: 16px; }
+        .edit-btn { color: var(--edit-color); }
+        .delete-btn { color: var(--delete-color); }
+        .action-btn:hover { opacity: 0.7; }
+        
+        #loader { text-align: center; padding: 40px; color: var(--text-secondary); }
+
+        /* Edit Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: var(--bg-secondary); padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;
+            border: 1px solid var(--border-color);
+        }
+        .modal-content h2 { margin-top: 0; color: var(--text-primary); }
+        .modal-form-group { margin-bottom: 20px; }
+        .modal-form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--text-secondary); }
+        .modal-form-group input { width: 100%; padding: 10px; font-size: 14px; background-color: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 4px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .modal-actions button { padding: 10px 20px; border: none; border-radius: 5px; font-size: 14px; cursor: pointer; font-weight: 500; }
+        #save-edit-btn { background-color: var(--green-color); color: white; }
+        #cancel-edit-btn { background-color: var(--text-secondary); color: var(--bg-primary); }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <h1>Content Dashboard</h1>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="class-filter">Class:</label>
+                <select id="class-filter"></select>
+            </div>
+            <input type="search" id="search-input" placeholder="Search in this class...">
+        </div>
+
+        <div id="subject-tabs"></div>
+
+        <div class="table-container">
+            <table id="content-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Chapter</th>
+                        <th>Type</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- Rows will be injected by JavaScript -->
+                </tbody>
+            </table>
+            <div id="loader">Select a class to begin...</div>
+        </div>
+    </div>
+
+    <!-- Edit Modal HTML -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content">
+            <h2>Edit Content</h2>
+            <form id="editForm">
+                <input type="hidden" id="editDocId">
+                <div class="modal-form-group">
+                    <label for="editTitle">Title</label>
+                    <input type="text" id="editTitle" required>
+                </div>
+                <div class="modal-form-group">
+                    <label for="editUrl">URL</label>
+                    <input type="url" id="editUrl" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancel-edit-btn">Cancel</button>
+                    <button type="submit" id="save-edit-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyALyD306KRV3o4BF6JddkvESPRroU7ljDE",
+          authDomain: "study-books-45192.firebaseapp.com",
+          projectId: "study-books-45192",
+          storageBucket: "study-books-45192.firebasestorage.app",
+          messagingSenderId: "339305499523",
+          appId: "1:339305499523:web:c51eaccbdaebe1293004b6",
+          measurementId: "G-MZWBP5RR9Z"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        let allContent = [];
+        let currentClass = '';
+        let currentSubject = 'All';
+
+        const classFilter = document.getElementById('class-filter');
+        const searchInput = document.getElementById('search-input');
+        const subjectTabsContainer = document.getElementById('subject-tabs');
+        const tableBody = document.getElementById('table-body');
+        const loader = document.getElementById('loader');
+        
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const cancelEditBtn = document.getElementById('cancel-edit-btn');
+        
+        async function loadInitialData() {
+            loader.textContent = 'Loading all content...';
+            loader.style.display = 'block';
+
+            try {
+                const querySnapshot = await db.collection('content').get();
+                allContent = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                const classes = [...new Set(allContent.map(item => item.class))].sort();
+                classFilter.innerHTML = '<option value="">-- Select a Class --</option>';
+                classes.forEach(c => classFilter.add(new Option(c, c)));
+                
+                loader.textContent = 'Select a class to begin...';
+            } catch (error) {
+                loader.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+                console.error("Error loading initial data: ", error);
+            }
+        }
+
+        function updateUI() {
+            const classFilteredContent = currentClass ? allContent.filter(item => item.class === currentClass) : [];
+            
+            // Update Subject Tabs
+            const subjects = ['All', ...new Set(classFilteredContent.map(item => item.subject))].sort();
+            subjectTabsContainer.innerHTML = '';
+            subjects.forEach(subject => {
+                const tab = document.createElement('button');
+                tab.className = 'tab-btn';
+                tab.textContent = subject;
+                tab.dataset.subject = subject;
+                if (subject === currentSubject) {
+                    tab.classList.add('active');
+                }
+                subjectTabsContainer.appendChild(tab);
+            });
+
+            // Filter by subject and search term
+            const searchTerm = searchInput.value.toLowerCase();
+            const finalFilteredContent = classFilteredContent
+                .filter(item => currentSubject === 'All' || item.subject === currentSubject)
+                .filter(item => 
+                    item.title.toLowerCase().includes(searchTerm) || 
+                    item.chapter.toLowerCase().includes(searchTerm)
+                )
+                .sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()); // Show newest first
+
+            renderTable(finalFilteredContent);
+        }
+
+        function renderTable(content) {
+            tableBody.innerHTML = '';
+            loader.style.display = 'none';
+
+            if (!currentClass) {
+                loader.textContent = 'Select a class to begin...';
+                loader.style.display = 'block';
+                return;
+            }
+
+            if (content.length === 0) {
+                loader.textContent = 'No content found for the selected filters.';
+                loader.style.display = 'block';
+                return;
+            }
+
+            content.forEach(item => {
+                const row = document.createElement('tr');
+                const createdDate = item.createdAt ? item.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const badgeClass = item.contentType === 'video' ? 'badge-video' : 'badge-pdf';
+                
+                row.innerHTML = `
+                    <td>${item.title}</td>
+                    <td>${item.chapter}</td>
+                    <td><span class="content-type-badge ${badgeClass}">${item.contentType}</span></td>
+                    <td>${createdDate}</td>
+                    <td>
+                        <div class="actions">
+                            <button class="action-btn edit-btn" data-doc-id="${item.id}" data-title="${item.title}" data-url="${item.url}">✏️</button>
+                            <button class="action-btn delete-btn" data-doc-id="${item.id}">🗑️</button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // --- EVENT LISTENERS ---
+        classFilter.addEventListener('change', () => {
+            currentClass = classFilter.value;
+            currentSubject = 'All'; // Reset to "All" tab when class changes
+            searchInput.value = '';
+            updateUI();
+        });
+        
+        searchInput.addEventListener('input', updateUI);
+
+        subjectTabsContainer.addEventListener('click', (e) => {
+            if (e.target.matches('.tab-btn')) {
+                currentSubject = e.target.dataset.subject;
+                updateUI();
+            }
+        });
+        
+        tableBody.addEventListener('click', (e) => {
+            const target = e.target;
+            const deleteBtn = target.closest('.delete-btn');
+            const editBtn = target.closest('.edit-btn');
+
+            if (deleteBtn) {
+                const docId = deleteBtn.dataset.docId;
+                if (window.confirm('Are you sure you want to delete this item?')) {
+                    db.collection('content').doc(docId).delete().then(() => {
+                        allContent = allContent.filter(item => item.id !== docId); // Optimistic update
+                        updateUI();
+                    }).catch(error => console.error('Error removing document: ', error));
+                }
+            }
+
+            if (editBtn) {
+                document.getElementById('editDocId').value = editBtn.dataset.docId;
+                document.getElementById('editTitle').value = editBtn.dataset.title;
+                document.getElementById('editUrl').value = editBtn.dataset.url;
+                editModal.style.display = 'flex';
+            }
+        });
+
+        cancelEditBtn.addEventListener('click', () => editModal.style.display = 'none');
+        
+        editForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('editDocId').value;
+            const newTitle = document.getElementById('editTitle').value;
+            const newUrl = document.getElementById('editUrl').value;
+
+            db.collection('content').doc(docId).update({ title: newTitle, url: newUrl }).then(() => {
+                const itemIndex = allContent.findIndex(item => item.id === docId);
+                if(itemIndex > -1) {
+                    allContent[itemIndex].title = newTitle;
+                    allContent[itemIndex].url = newUrl;
+                }
+                updateUI();
+                editModal.style.display = 'none';
+            }).catch(error => console.error('Error updating document: ', error));
+        });
+
+        document.addEventListener('DOMContentLoaded', loadInitialData);
+    </script>
+</body>
+</html>
