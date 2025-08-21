@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Upload Test</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 500px; }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: 500; }
+        input[type="text"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #a0a0a0; cursor: not-allowed; }
+        #status { text-align: center; margin-top: 20px; font-weight: bold; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Add New Test PDF</h1>
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="title">Test Title</label>
+                <input type="text" id="title" placeholder="e.g., Botany Full Test 4" required>
+            </div>
+            <div class="form-group">
+                <label for="class">Class</label>
+                <select id="class" required>
+                    <option value="" disabled selected>Select a class</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                    <option value="11JEE">11 JEE</option>
+                    <option value="11NEET">11 NEET</option>
+                    <option value="12JEE">12 JEE</option>
+                    <option value="12NEET">12 NEET</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="url">PDF URL</label>
+                <input type="text" id="url" placeholder="Paste Adobe Acrobat public share link here" required>
+            </div>
+            <button type="submit" id="submitBtn">Upload Test</button>
+        </form>
+        <p id="status"></p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJtOpfO8krZY8K2rCv8Ma8iCjEsGwFqvo",
+            authDomain: "test-pdf-upload-c1617.firebaseapp.com",
+            projectId: "test-pdf-upload-c1617",
+            storageBucket: "test-pdf-upload-c1617.firebasestorage.app",
+            messagingSenderId: "122854901734",
+            appId: "1:122854901734:web:f3663cbfe2981139763827",
+            measurementId: "G-LEG479C2XT"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const statusEl = document.getElementById('status');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Uploading...';
+            statusEl.textContent = '';
+
+            try {
+                await db.collection("tests").add({
+                    title: document.getElementById('title').value,
+                    class: document.getElementById('class').value,
+                    url: document.getElementById('url').value,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                statusEl.textContent = "Upload successful!";
+                statusEl.className = 'success';
+                document.getElementById('uploadForm').reset();
+            } catch (error) {
+                console.error("Error adding document: ", error);
+                statusEl.textContent = "Upload failed. Check console for details.";
+                statusEl.className = 'error';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Upload Test';
+            }
+        });
+    </script>
+
+</body>
+</html>
