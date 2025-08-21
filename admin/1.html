@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1.0</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 700px; margin: 0 auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #0056b3; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input[type="text"], input[type="url"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+        #newChapterDiv { display: none; margin-top: 10px; }
+        #status { text-align: center; margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Admin Content Uploader</h1>
+        <form id="adminForm">
+            <div class="form-group">
+                <label for="contentType">Content Type:</label>
+                <select id="contentType" required>
+                    <option value="video">Concept Video</option>
+                    <option value="pdf">PDF</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="classSelect">Class:</label>
+                <select id="classSelect" required>
+                    <option value="">-- Select a Class --</option>
+                    <option value="6">Class 6</option> <option value="7">Class 7</option> <option value="8">Class 8</option>
+                    <option value="9">Class 9</option> <option value="10">Class 10</option> <option value="11 JEE">Class 11 JEE</option>
+                    <option value="11 NEET">Class 11 NEET</option> <option value="12 JEE">Class 12 JEE</option> <option value="12 NEET">Class 12 NEET</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="subjectSelect">Subject:</label>
+                <select id="subjectSelect" required disabled>
+                    <option value="">-- Select a Subject --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="chapterSelect">Chapter:</label>
+                <select id="chapterSelect" required disabled>
+                    <option value="">-- Select or Add a Chapter --</option>
+                </select>
+                <div id="newChapterDiv">
+                    <label for="newChapterInput">New Chapter Name:</label>
+                    <input type="text" id="newChapterInput" placeholder="e.g., Kinematics">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="contentTitle">Content Title:</label>
+                <input type="text" id="contentTitle" placeholder="e.g., Introduction to Vectors" required>
+            </div>
+            <div class="form-group">
+                <label for="contentUrl">Content URL:</label>
+                <input type="url" id="contentUrl" placeholder="https://example.com/video.mp4" required>
+            </div>
+            <button type="submit">Add Content</button>
+        </form>
+        <div id="status"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyALyD306KRV3o4BF6JddkvESPRroU7ljDE",
+          authDomain: "study-books-45192.firebaseapp.com",
+          projectId: "study-books-45192",
+          storageBucket: "study-books-45192.firebasestorage.app",
+          messagingSenderId: "339305499523",
+          appId: "1:339305499523:web:c51eaccbdaebe1293004b6",
+          measurementId: "G-MZWBP5RR9Z"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const classSelect = document.getElementById('classSelect');
+        const subjectSelect = document.getElementById('subjectSelect');
+        const chapterSelect = document.getElementById('chapterSelect');
+        const newChapterDiv = document.getElementById('newChapterDiv');
+        const newChapterInput = document.getElementById('newChapterInput');
+        const adminForm = document.getElementById('adminForm');
+        const statusDiv = document.getElementById('status');
+        
+        const subjectsByClass = {
+            '6': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '7': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'],
+            '8': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '9': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'],
+            '10': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '11 JEE': ['PHYSICS', 'CHEM', 'MATH'],
+            '11 NEET': ['PHY', 'CHEM', 'ZOOLOGY', 'BOTANY'], '12 JEE': ['PHYSICS', 'CHEM', 'MATH'], '12 NEET': ['PHY', 'CHEM', 'ZOOLOGY', 'BOTANY'],
+        };
+        
+        classSelect.addEventListener('change', () => {
+            const selectedClass = classSelect.value;
+            subjectSelect.innerHTML = '<option value="">-- Select a Subject --</option>';
+            subjectSelect.disabled = true;
+            chapterSelect.innerHTML = '<option value="">-- Select or Add a Chapter --</option>';
+            chapterSelect.disabled = true;
+            newChapterDiv.style.display = 'none';
+
+            if (selectedClass && subjectsByClass[selectedClass]) {
+                subjectsByClass[selectedClass].forEach(subject => {
+                    subjectSelect.add(new Option(subject, subject));
+                });
+                subjectSelect.disabled = false;
+            }
+        });
+
+        subjectSelect.addEventListener('change', async () => {
+            const selectedClass = classSelect.value;
+            const selectedSubject = subjectSelect.value;
+            chapterSelect.innerHTML = '<option value="">-- Loading Chapters... --</option>';
+            chapterSelect.disabled = true;
+            newChapterDiv.style.display = 'none';
+
+            if (selectedClass && selectedSubject) {
+                try {
+                    const querySnapshot = await db.collection('content')
+                        .where('class', '==', selectedClass)
+                        .where('subject', '==', selectedSubject)
+                        .get();
+
+                    const existingChapters = new Set();
+                    querySnapshot.forEach(doc => {
+                        existingChapters.add(doc.data().chapter);
+                    });
+
+                    chapterSelect.innerHTML = '<option value="">-- Select an Existing Chapter --</option>';
+                    chapterSelect.innerHTML += '<option value="__addNew__">-- Add a New Chapter --</option>';
+                    
+                    existingChapters.forEach(chapterName => {
+                        chapterSelect.add(new Option(chapterName, chapterName));
+                    });
+                    chapterSelect.disabled = false;
+                } catch (error) {
+                    console.error("Error fetching chapters: ", error);
+                    showStatus("Could not fetch chapters. Check console for index error.", "error");
+                }
+            }
+        });
+
+        chapterSelect.addEventListener('change', () => {
+            if (chapterSelect.value === '__addNew__') {
+                newChapterDiv.style.display = 'block';
+                newChapterInput.required = true;
+            } else {
+                newChapterDiv.style.display = 'none';
+                newChapterInput.required = false;
+            }
+        });
+        
+        adminForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            showStatus('Submitting...', '');
+
+            const contentType = document.getElementById('contentType').value;
+            const className = classSelect.value;
+            const subject = subjectSelect.value;
+            let chapter = chapterSelect.value;
+            if (chapter === '__addNew__') {
+                chapter = newChapterInput.value.trim();
+            }
+            const title = document.getElementById('contentTitle').value;
+            const url = document.getElementById('contentUrl').value;
+
+            if (!className || !subject || !chapter || !title || !url) {
+                showStatus('Please fill out all fields.', 'error');
+                return;
+            }
+            
+            const contentData = {
+                class: className,
+                subject: subject,
+                chapter: chapter,
+                contentType: contentType,
+                title: title,
+                url: url,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            db.collection('content').add(contentData)
+                .then(() => {
+                    showStatus(`Content added successfully!`, 'success');
+                    adminForm.reset();
+                    subjectSelect.disabled = true;
+                    chapterSelect.disabled = true;
+                    newChapterDiv.style.display = 'none';
+                })
+                .catch((error) => {
+                    console.error("Error adding document: ", error);
+                    showStatus(`Error: ${error.message}`, 'error');
+                });
+        });
+
+        function showStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = type;
+            setTimeout(() => { statusDiv.textContent = ''; statusDiv.className = ''; }, 5000);
+        }
+    </script>
+</body>
+</html>
