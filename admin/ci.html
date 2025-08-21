@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Set Chapter Images</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; padding: 25px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #0056b3; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input[type="url"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        select:disabled { background-color: #e9ecef; }
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover:not(:disabled) { background-color: #218838; }
+        button:disabled { background-color: #a0d3ac; cursor: not-allowed; }
+        #image-preview-container { margin-top: 20px; text-align: center; }
+        #image-preview { max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid #ddd; margin-top: 10px; }
+        #status { text-align: center; margin-top: 20px; font-weight: bold; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Set Chapter Header Image</h1>
+        <p style="text-align: center; color: #666; margin-top: -10px; margin-bottom: 30px;">This will add the same image URL to all content items within the selected chapter.</p>
+        
+        <form id="imageForm">
+            <div class="form-group"><label for="classSelect">1. Select Class</label><select id="classSelect" required><option value="">-- Select a Class --</option><option value="6">Class 6</option><option value="7">Class 7</option><option value="8">Class 8</option><option value="9">Class 9</option><option value="10">Class 10</option><option value="11 JEE">Class 11 JEE</option><option value="11 NEET">Class 11 NEET</option><option value="12 JEE">Class 12 JEE</option><option value="12 NEET">Class 12 NEET</option></select></div>
+            <div class="form-group"><label for="subjectSelect">2. Select Subject</label><select id="subjectSelect" required disabled></select></div>
+            <div class="form-group"><label for="chapterSelect">3. Select Chapter</label><select id="chapterSelect" required disabled></select></div>
+            <div class="form-group"><label for="imageUrl">4. Image URL</label><input type="url" id="imageUrl" placeholder="https://example.com/image.jpg" required disabled></div>
+            <div id="image-preview-container" style="display: none;"><label>Current Image:</label><img id="image-preview" src="" alt="Image Preview"></div>
+            <button type="submit" id="submitBtn" disabled>Save Image for Chapter</button>
+        </form>
+        <div id="status"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyALyD306KRV3o4BF6JddkvESPRroU7ljDE", authDomain: "study-books-45192.firebaseapp.com", projectId: "study-books-45192", storageBucket: "study-books-45192.firebasestorage.app", messagingSenderId: "339305499523", appId: "1:339305499523:web:c51eaccbdaebe1293004b6", measurementId: "G-MZWBP5RR9Z" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const subjectsByClass = { '6': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '7': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '8': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '9': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '10': ['ENG', 'MATH', 'BIO', 'PHY', 'CHEM', 'SST'], '11 JEE': ['PHYSICS', 'CHEM', 'MATH'], '11 NEET': ['PHY', 'CHEM', 'ZOOLOGY', 'BOTANY'], '12 JEE': ['PHYSICS', 'CHEM', 'MATH'], '12 NEET': ['PHY', 'CHEM', 'ZOOLOGY', 'BOTANY'] };
+
+        const classSelect = document.getElementById('classSelect'), subjectSelect = document.getElementById('subjectSelect'), chapterSelect = document.getElementById('chapterSelect'),
+              imageUrlInput = document.getElementById('imageUrl'), submitBtn = document.getElementById('submitBtn'), imageForm = document.getElementById('imageForm'),
+              statusDiv = document.getElementById('status'), previewContainer = document.getElementById('image-preview-container'), previewImg = document.getElementById('image-preview');
+
+        classSelect.addEventListener('change', () => {
+            const selectedClass = classSelect.value;
+            subjectSelect.innerHTML = '<option value="">-- Select a Subject --</option>'; chapterSelect.innerHTML = '';
+            subjectSelect.disabled = true; chapterSelect.disabled = true; imageUrlInput.disabled = true; submitBtn.disabled = true; previewContainer.style.display = 'none';
+            if (selectedClass) { subjectsByClass[selectedClass].forEach(s => subjectSelect.add(new Option(s, s))); subjectSelect.disabled = false; }
+        });
+
+        subjectSelect.addEventListener('change', async () => {
+            const selectedClass = classSelect.value, selectedSubject = subjectSelect.value;
+            chapterSelect.innerHTML = '<option value="">-- Loading Chapters --</option>';
+            chapterSelect.disabled = true; imageUrlInput.disabled = true; submitBtn.disabled = true; previewContainer.style.display = 'none';
+            if (selectedClass && selectedSubject) {
+                try {
+                    const query = db.collection('content').where('class', '==', selectedClass).where('subject', '==', selectedSubject);
+                    const snapshot = await query.get();
+                    const chapters = new Set();
+                    snapshot.forEach(doc => chapters.add(doc.data().chapter));
+                    chapterSelect.innerHTML = '<option value="">-- Select a Chapter --</option>';
+                    [...chapters].sort().forEach(c => chapterSelect.add(new Option(c, c)));
+                    chapterSelect.disabled = false;
+                } catch (error) { showStatus('Error fetching chapters. An index might be required.', 'error'); console.error(error); }
+            }
+        });
+
+        chapterSelect.addEventListener('change', async () => {
+            imageUrlInput.value = ''; imageUrlInput.disabled = true; submitBtn.disabled = true; previewContainer.style.display = 'none';
+            const chapterName = chapterSelect.value;
+            if (chapterName) {
+                imageUrlInput.disabled = false; submitBtn.disabled = false;
+                const query = db.collection('content').where('class', '==', classSelect.value).where('subject', '==', subjectSelect.value).where('chapter', '==', chapterName).limit(1);
+                const snapshot = await query.get();
+                if (!snapshot.empty) {
+                    const firstDoc = snapshot.docs[0].data();
+                    if (firstDoc.headerImageUrl) {
+                        imageUrlInput.value = firstDoc.headerImageUrl;
+                        previewImg.src = firstDoc.headerImageUrl;
+                        previewContainer.style.display = 'block';
+                    }
+                }
+            }
+        });
+
+        imageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            submitBtn.disabled = true; showStatus('Updating, please wait...', '');
+            const className = classSelect.value, subjectName = subjectSelect.value, chapterName = chapterSelect.value, imageUrl = imageUrlInput.value;
+
+            try {
+                // 1. Find all documents for this chapter
+                const query = db.collection('content').where('class', '==', className).where('subject', '==', subjectName).where('chapter', '==', chapterName);
+                const snapshot = await query.get();
+
+                if (snapshot.empty) {
+                    showStatus('No content found for this chapter. Cannot save image.', 'error');
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                // 2. Use a batched write to update all of them at once
+                const batch = db.batch();
+                snapshot.docs.forEach(doc => {
+                    batch.update(doc.ref, { headerImageUrl: imageUrl });
+                });
+
+                // 3. Commit the batch
+                await batch.commit();
+
+                showStatus(`Successfully updated image for ${snapshot.size} items in the chapter!`, 'success');
+                previewImg.src = imageUrl;
+                previewContainer.style.display = 'block';
+            } catch (error) {
+                showStatus('Error saving image: ' + error.message, 'error');
+                console.error("This error might mean you need to create a Firestore index for 'class', 'subject', and 'chapter'.", error);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+        
+        function showStatus(message, type) { statusDiv.textContent = message; statusDiv.className = type; }
+    </script>
+</body>
+</html>
