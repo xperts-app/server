@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Tests</title>
+    <style>
+        :root { --bg-color: #F0F2F5; --card-bg: #FFFFFF; --text-primary: #1c1c1e; --text-secondary: #6e6e73; --color-blue: #007AFF; --color-green: #34C759; --color-red: #FF3B30; --border-color: #e5e5ea; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: var(--card-bg); padding: 25px; border-radius: 12px; }
+        h1 { color: var(--text-primary); text-align: center; }
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        #search-input { padding: 12px; width: 300px; border-radius: 8px; border: 1px solid var(--border-color); background-color: #f2f2f7;}
+        .btn { display: inline-block; padding: 12px 25px; background-color: var(--color-green); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight:600; text-decoration: none; }
+        .test-list { padding: 0; }
+        .test-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-color); }
+        .test-item:last-child { border-bottom: none; }
+        .test-info h3 { margin: 0; }
+        .test-info p { margin: 5px 0 0; color: var(--text-secondary); }
+        .actions a, .actions button { margin-left: 10px; text-decoration: none; padding: 8px 15px; border-radius: 8px; color: white; border: none; cursor: pointer; font-weight: 500;}
+        .edit-btn { background-color: var(--color-blue); }
+        .delete-btn { background-color: var(--color-red); }
+        #loading { text-align: center; padding: 30px; color: var(--text-secondary); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Manage Tests</h1>
+    <div class="toolbar">
+        <input type="text" id="search-input" placeholder="Search by name or class...">
+        <a href="1.html" class="btn">Create New Test</a>
+    </div>
+    <div class="test-list" id="test-list"></div>
+    <p id="loading">Loading tests...</p>
+</div>
+<!-- JS remains the same -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script>
+    const firebaseConfig = { apiKey: "AIzaSyDVIgUAmKlJqwvkd9kblaujzIVlSq9_EiM", authDomain: "tests-data-with-leaderboard.firebaseapp.com", projectId: "tests-data-with-leaderboard", storageBucket: "tests-data-with-leaderboard.firebasestorage.app", messagingSenderId: "884648979462", appId: "1:884648979462:web:446df6ccb02bf73397e787", measurementId: "G-701ZP61XZT" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    let allTests = [];
+    async function loadTests() { const loadingEl = document.getElementById('loading'); try { const snapshot = await db.collection('tests').orderBy('createdAt', 'desc').get(); allTests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); renderTests(allTests); loadingEl.style.display = 'none'; } catch (error) { console.error("Error:", error); loadingEl.textContent = "Failed to load tests."; } }
+    function renderTests(tests) { const testList = document.getElementById('test-list'); testList.innerHTML = ''; if (tests.length === 0) { testList.innerHTML = '<div style="text-align:center; padding: 20px;">No tests found.</div>'; return; } tests.forEach(test => { const item = document.createElement('div'); item.className = 'test-item'; item.dataset.testId = test.id; item.innerHTML = `<div class="test-info"><h3>${test.testName}</h3><p>Class: ${test.class} | Questions: ${test.questions.length}</p></div><div class="actions"><a href="1.html?edit=${test.id}" class="edit-btn">Edit</a><button class="delete-btn" onclick="deleteTest('${test.id}', this)">Delete</button></div>`; testList.appendChild(item); }); }
+    async function deleteTest(testId, buttonElement) { if (!confirm('Are you sure you want to delete this test and all its results? This cannot be undone.')) return; buttonElement.textContent = 'Deleting...'; buttonElement.disabled = true; try { const resultsQuery = db.collection('results').where('testId', '==', testId); const resultsSnapshot = await resultsQuery.get(); const batch = db.batch(); resultsSnapshot.forEach(doc => { batch.delete(doc.ref); }); await batch.commit(); await db.collection('tests').doc(testId).delete(); document.querySelector(`.test-item[data-test-id="${testId}"]`).remove(); allTests = allTests.filter(t => t.id !== testId); } catch (error) { console.error("Error:", error); alert('Failed to delete test.'); buttonElement.textContent = 'Delete'; buttonElement.disabled = false; } }
+    document.getElementById('search-input').addEventListener('input', (e) => { const searchTerm = e.target.value.toLowerCase(); const filteredTests = allTests.filter(test => test.testName.toLowerCase().includes(searchTerm) || test.class.toLowerCase().includes(searchTerm)); renderTests(filteredTests); });
+    document.addEventListener('DOMContentLoaded', loadTests);
+</script>
+</body>
+</html>
