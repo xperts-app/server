@@ -1,2 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification Required - Education Program</title>
+    <style>
+        /* CSS starts here */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #e0f7fa; /* Light cyan background */
+            color: #263238; /* Dark blue-grey text */
+            line-height: 1.6;
+        }
 
-vfcfghfgh
+        .container {
+            padding: 20px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .message-box {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            border-top: 5px solid #007bff; /* Accent color */
+        }
+
+        .icon-wrapper {
+            margin-bottom: 25px;
+        }
+
+        .education-icon {
+            width: 80px; /* Adjust SVG size */
+            height: 80px;
+            fill: #007bff; /* Color of the SVG */
+        }
+
+        h1 {
+            color: #d32f2f; /* Red for alert */
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            color: #455a64;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0, 123, 255, 0.3);
+        }
+        /* CSS ends here */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="message-box">
+            <div class="icon-wrapper">
+                <!-- Custom SVG for Education (Graduation Cap) -->
+                <svg class="education-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 3L1 9L12 15L23 9L12 3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M5 12.3V19.7L12 23.3L19 19.7V12.3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M19 9L12 12.5L5 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <h1>Verification Required</h1>
+            <p>You are not yet verified by Admin or MCI Management for our **Education Testing Program**. Please contact them to complete your verification and gain access.</p>
+            <button id="contactButton">Contact Verification Team</button>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript starts here
+        document.getElementById('contactButton').addEventListener('click', function() {
+            console.log('User clicked "Contact Verification Team". Suggesting they reach out to program administrator or MCI Management for verification.');
+            // In a real application, you might:
+            // - Redirect to a specific contact page: window.location.href = 'contact.html';
+            // - Open a modal with contact details
+            // - Send an event to an analytics system
+        });
+        // JavaScript ends here
+    </script>
+</body>
+</html>
