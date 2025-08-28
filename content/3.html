@@ -4,18 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Content Viewer</title>
-    <!-- Google Fonts for a modern look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --accent-color: #6d6d6d;
-            --text-primary: #1a202c;
-            --text-secondary: #718096;
-            --border-color: #e2e8f0;
-            --card-bg: #ffffff;
-            --body-bg: #f7fafc;
+            --accent-color: #6d6d6d; --text-primary: #1a202c; --text-secondary: #718096;
+            --border-color: #e2e8f0; --card-bg: #ffffff; --body-bg: #f7fafc;
         }
         .theme-bio, .theme-botany, .theme-zoology { --accent-color: #10B981; }
         .theme-eng { --accent-color: #EF4444; }
@@ -86,7 +81,7 @@
     <div class="app-container">
         <header class="chapter-header" id="chapter-header">
             <div class="header-content">
-                <a href="javascript:history.back()" class="back-arrow">←</a>
+                <a href="javascript:history.back()" class="back-arrow">&larr;</a>
                 <div class="header-title">
                     <h1 id="chapter-title">Loading...</h1>
                     <p class="class-details" id="class-details"></p>
@@ -137,8 +132,9 @@
             'SST': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS1z5kXMKG22tkvaFs1GoUr0F_jgV6vPSwy8462fkZ5Oq2WtLT1PwtPqdlg&s=10'
         };
         
+        // --- CORRECTED AND FINAL: Robust Document ID Creation Function ---
         const createDocId = (className, subjectName, chapterName) => {
-            const clean = (str) => str.toString().replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            const clean = (str) => String(str).replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
             return `${clean(className)}_${clean(subjectName)}_${clean(chapterName)}`;
         };
 
@@ -163,15 +159,20 @@
 
             try {
                 const docId = createDocId(className, subjectKey, chapterName);
+                console.log("Attempting to fetch metadata with Document ID:", docId); // DEBUGGING LINE
+
                 const imagePromise = db.collection('chapter_metadata').doc(docId).get();
                 const contentPromise = db.collection('content').where('class', '==', className).where('subject', '==', subjectKey).where('chapter', '==', chapterName).get();
 
                 const [imageDocSnap, contentSnapshot] = await Promise.all([imagePromise, contentPromise]);
 
                 let finalImageUrl = imageUrlMap[subjectKey.toUpperCase()] || ''; 
-                // --- THIS IS THE CORRECTED LINE ---
+                
                 if (imageDocSnap.exists && imageDocSnap.data().headerImageUrl) {
+                    console.log("Custom image found:", imageDocSnap.data().headerImageUrl); // DEBUGGING LINE
                     finalImageUrl = imageDocSnap.data().headerImageUrl;
+                } else {
+                    console.log("No custom image found. Using default subject image."); // DEBUGGING LINE
                 }
 
                 if (finalImageUrl) {
@@ -190,9 +191,9 @@
                         return `
                         <li>
                             <a href="${playerUrl}" class="content-item" onclick='saveToContinueWatching(${escapedVideoData})'>
-                                <div class="item-thumbnail">${finalImageUrl ? `<img src="${finalImageUrl}" alt="Video thumbnail" class="thumbnail-img">` : `<span class="thumbnail-icon">►</span>`}</div>
+                                <div class="item-thumbnail">${finalImageUrl ? `<img src="${finalImageUrl}" alt="Video thumbnail" class="thumbnail-img">` : `<span class="thumbnail-icon">&#9658;</span>`}</div>
                                 <div class="item-details"><p class="item-title">${item.title}</p></div>
-                                <div class="item-action"><span class="download-icon">↓</span></div>
+                                <div class="item-action"><span class="download-icon">&#x2193;</span></div>
                             </a>
                         </li>`;
                     }).join('');
@@ -202,9 +203,9 @@
                     pdfListEl.innerHTML = pdfs.map(item => `
                         <li>
                             <a href="${item.url}" target="_blank" class="content-item">
-                                <div class="item-thumbnail" style="background-color: var(--text-secondary);"><span class="thumbnail-icon"></span></div>
+                                <div class="item-thumbnail" style="background-color: var(--text-secondary);"><span class="thumbnail-icon">&#128196;</span></div>
                                 <div class="item-details"><p class="item-title">${item.title}</p></div>
-                                <div class="item-action"><span class="download-icon">↓</span></div>
+                                <div class="item-action"><span class="download-icon">&#x2193;</span></div>
                             </a>
                         </li>`).join('');
                 } else { notesSection.innerHTML += '<p>No notes found for this chapter.</p>'; }
@@ -228,4 +229,4 @@
         }
     </script>
 </body>
-</html>
+            </html>
