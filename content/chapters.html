@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapters</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --accent-color: #6d6d6d; --text-primary: #1a202c; --text-secondary: #718096;
+            --border-color: #e2e8f0; --card-bg: #ffffff; --body-bg: #f7fafc;
+        }
+        .theme-bio, .theme-botany, .theme-zoology { --accent-color: #10B981; }
+        .theme-eng { --accent-color: #EF4444; }
+        .theme-phy, .theme-physics { --accent-color: #3B82F6; }
+        .theme-math { --accent-color: #0EA5E9; }
+        .theme-chem, .theme-sst { --accent-color: #A855F7; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--body-bg); color: var(--text-primary); }
+        .app-container { max-width: 600px; margin: 0 auto; }
+        .subject-header {
+            background-color: var(--card-bg); color: var(--text-primary); padding: 20px; padding-top: 50px;
+            border-bottom: 4px solid var(--accent-color); border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: relative; z-index: 10;
+        }
+        .header-main { display: flex; align-items: center; justify-content: space-between;}
+        .header-main > div { display: flex; align-items: center; gap: 15px;}
+        .back-arrow { font-size: 24px; color: var(--text-primary); text-decoration: none; }
+        .header-title h1 { font-size: 28px; font-weight: 700; }
+        .header-title .class-name { font-size: 16px; color: var(--text-secondary); }
+        .sparkle-icon { font-size: 28px; color: #EAB308; }
+        
+        .content-body { padding: 20px; }
+        .accordion { border-radius: 16px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); overflow: hidden; background-color: var(--card-bg); }
+        .folder-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px; cursor: pointer; border-bottom: 1px solid var(--border-color);
+        }
+        .folder-header h2 { font-size: 18px; font-weight: 600; }
+        .folder-toggle-icon { transition: transform 0.3s ease; }
+        .folder-header.active .folder-toggle-icon { transform: rotate(180deg); }
+
+        .chapter-list {
+            list-style: none; max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease-out;
+        }
+        .folder-header.active + .chapter-list { max-height: 1000px; }
+        
+        .chapter-item {
+            display: flex; align-items: center; gap: 15px; padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color); text-decoration: none; color: var(--text-primary);
+        }
+        .chapter-item:last-child { border-bottom: none; }
+        .chapter-number {
+            flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%;
+            background-color: var(--body-bg); color: var(--text-secondary);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; font-size: 14px;
+        }
+        .chapter-title { font-weight: 500; }
+        #loader, #message { text-align: center; font-size: 1em; padding: 40px; color: var(--text-secondary); }
+    </style>
+</head>
+<body class="theme-default">
+    <main class="app-container">
+        <header class="subject-header">
+            <div class="header-main">
+                <div><a href="javascript:history.back()" class="back-arrow">&larr;</a><div class="header-title"><h1 id="subject-name">Loading...</h1><p class="class-name" id="class-name"></p></div></div>
+                <span class="sparkle-icon">✨</span>
+            </div>
+        </header>
+        <div class="content-body" id="content-body">
+            <div id="loader">Loading Chapters...</div>
+        </div>
+    </main>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { apiKey: "AIzaSyALyD306KRV3o4BF6JddkvESPRroU7ljDE", authDomain: "study-books-45192.firebaseapp.com", projectId: "study-books-45192", storageBucket: "study-books-45192.firebasestorage.app", messagingSenderId: "339305499523", appId: "1:339305499523:web:c51eaccbdaebe1293004b6", measurementId: "G-MZWBP5RR9Z" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const themeMap = { 'BIO': 'theme-bio', 'BOTANY': 'theme-botany', 'ZOOLOGY': 'theme-zoology', 'ENG': 'theme-eng', 'PHY': 'theme-phy', 'PHYSICS': 'theme-physics', 'MATH': 'theme-math', 'CHEM': 'theme-chem', 'SST': 'theme-sst' };
+        const fullNameMap = { 'BIO': 'Biology', 'BOTANY': 'Botany', 'ZOOLOGY': 'Zoology', 'ENG': 'English', 'PHY': 'Physics', 'PHYSICS': 'Physics', 'MATH': 'Mathematics', 'CHEM': 'Chemistry', 'SST': 'Social Science' };
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            const body = document.body, subjectNameEl = document.getElementById('subject-name'),
+                  classNameEl = document.getElementById('class-name'), contentBody = document.getElementById('content-body'),
+                  loaderEl = document.getElementById('loader');
+
+            const params = new URLSearchParams(window.location.search);
+            const className = params.get('class'), subjectKey = params.get('subject');
+
+            if (!className || !subjectKey) { loaderEl.innerHTML = `<div class="error-message">Error: Missing URL parameters.</div>`; return; }
+
+            const themeClass = themeMap[subjectKey.toUpperCase()];
+            if (themeClass) body.classList.add(themeClass);
+            
+            subjectNameEl.textContent = fullNameMap[subjectKey.toUpperCase()] || subjectKey;
+            classNameEl.textContent = `Class ${className.replace(/%20/g, ' ')}`;
+
+            try {
+                // This query requires the new composite index on (class, subject, folder)
+                const query = db.collection('content').where('class', '==', className).where('subject', '==', subjectKey).orderBy('folder');
+                const snapshot = await query.get();
+                if(snapshot.empty) { loaderEl.textContent = 'No chapters found for this subject.'; return; }
+
+                const folders = {}; // Use an object to group chapters by folder
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const folderName = data.folder || 'Uncategorized';
+                    if (!folders[folderName]) folders[folderName] = new Set();
+                    folders[folderName].add(data.chapter);
+                });
+
+                loaderEl.style.display = 'none';
+                let accordionHtml = '<div class="accordion">';
+                
+                Object.keys(folders).sort().forEach((folderName, index) => {
+                    const chapters = [...folders[folderName]].sort();
+                    const isActive = index === 0; // Open the first folder by default
+                    
+                    accordionHtml += `
+                        <div class="folder-header ${isActive ? 'active' : ''}">
+                            <h2>${folderName}</h2>
+                            <span class="folder-toggle-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                            </span>
+                        </div>
+                        <ul class="chapter-list">`;
+                    
+                    chapters.forEach((chapterName, chapterIndex) => {
+                        const href = `3.html?class=${encodeURIComponent(className)}&subject=${encodeURIComponent(subjectKey)}&chapter=${encodeURIComponent(chapterName)}`;
+                        accordionHtml += `
+                            <li>
+                                <a href="${href}" class="chapter-item">
+                                    <span class="chapter-number">${String(chapterIndex + 1).padStart(2, '0')}</span>
+                                    <span class="chapter-title">${chapterName}</span>
+                                </a>
+                            </li>`;
+                    });
+
+                    accordionHtml += `</ul>`;
+                });
+                accordionHtml += '</div>';
+                contentBody.innerHTML = accordionHtml;
+
+                document.querySelectorAll('.folder-header').forEach(header => {
+                    header.addEventListener('click', () => {
+                        const wasActive = header.classList.contains('active');
+                        // Close all accordions
+                        document.querySelectorAll('.folder-header').forEach(h => h.classList.remove('active'));
+                        // If the clicked one wasn't the active one, open it.
+                        if (!wasActive) header.classList.add('active');
+                    });
+                });
+
+            } catch (error) {
+                loaderEl.innerHTML = `<div class="error-message">Error: ${error.message}</div>`;
+                console.error("Error fetching content: ", error);
+            }
+        });
+    </script>
+</body>
+</html>```
