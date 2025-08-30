@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <title>Story Viewer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: black;
+      overflow: hidden;
+    }
+
+    #viewer {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #storyImage {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      transition: opacity 0.3s ease;
+      z-index: 1;
+    }
+
+    .progress-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      height: 4px;
+      display: flex;
+      gap: 4px;
+      z-index: 10;
+    }
+
+    .progress-bar {
+      flex: 1;
+      background-color: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      background-color: white;
+      height: 100%;
+      width: 0%;
+      transition: width 0.1s linear;
+    }
+
+    .click-area {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      z-index: 2;
+    }
+
+    #leftZone {
+      left: 0;
+    }
+
+    #rightZone {
+      right: 0;
+    }
+
+    .pause-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.3);
+      z-index: 5;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .pause-overlay.show {
+      opacity: 1;
+    }
+
+    img, .click-area, .pause-overlay {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="viewer">
+  <div class="progress-container" id="progressContainer"></div>
+  <img id="storyImage" src="" alt="Story"/>
+  <div class="pause-overlay" id="pauseOverlay"></div>
+  <div class="click-area" id="leftZone"></div>
+  <div class="click-area" id="rightZone"></div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const images = params.getAll('img');
+  const duration = 3000;
+
+  let currentIndex = 0;
+  let interval;
+  let isPaused = false;
+
+  const imgElement = document.getElementById('storyImage');
+  const progressContainer = document.getElementById('progressContainer');
+  const pauseOverlay = document.getElementById('pauseOverlay');
+  const leftZone = document.getElementById('leftZone');
+  const rightZone = document.getElementById('rightZone');
+
+  function createProgressBars() {
+    progressContainer.innerHTML = '';
+    images.forEach(() => {
+      const bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      const fill = document.createElement('div');
+      fill.className = 'progress-fill';
+      bar.appendChild(fill);
+      progressContainer.appendChild(bar);
+    });
+  }
+
+  function updateProgressBar(index, progress) {
+    const bars = document.querySelectorAll('.progress-fill');
+    bars.forEach((bar, i) => {
+      if (i < index) bar.style.width = '100%';
+      else if (i === index) bar.style.width = progress + '%';
+      else bar.style.width = '0%';
+    });
+  }
+
+  function showImage(index) {
+    currentIndex = index;
+    imgElement.src = images[index];
+    resetProgress();
+    animateProgress();
+  }
+
+  function nextImage() {
+    currentIndex = (currentIndex + 1) % images.length;
+    showImage(currentIndex);
+  }
+
+  function prevImage() {
+    currentIndex = (currentIndex - 1 + images.length) % images.length;
+    showImage(currentIndex);
+  }
+
+  function pause() {
+    isPaused = true;
+    pauseOverlay.classList.add('show');
+  }
+
+  function resume() {
+    isPaused = false;
+    pauseOverlay.classList.remove('show');
+  }
+
+  function resetProgress() {
+    clearInterval(interval);
+  }
+
+  function animateProgress() {
+    let elapsed = 0;
+    const fillInterval = 50;
+
+    interval = setInterval(() => {
+      if (!isPaused) {
+        elapsed += fillInterval;
+        const percent = Math.min((elapsed / duration) * 100, 100);
+        updateProgressBar(currentIndex, percent);
+        if (elapsed >= duration) {
+          clearInterval(interval);
+          nextImage();
+        }
+      }
+    }, fillInterval);
+  }
+
+  // Disable context menu (long press on mobile, right-click on desktop)
+  [imgElement, leftZone, rightZone].forEach(el => {
+    el.addEventListener('contextmenu', e => e.preventDefault());
+  });
+
+  // Mouse/touch pause-resume
+  [imgElement, leftZone, rightZone].forEach(el => {
+    el.addEventListener('mousedown', pause);
+    el.addEventListener('mouseup', resume);
+    el.addEventListener('touchstart', pause);
+    el.addEventListener('touchend', resume);
+  });
+
+  // Click navigation
+  leftZone.addEventListener('click', prevImage);
+  rightZone.addEventListener('click', nextImage);
+
+  // Start viewer
+  if (images.length > 0) {
+    createProgressBars();
+    showImage(currentIndex);
+  } else {
+    document.getElementById('viewer').innerHTML = "<p style='color:white;'>No images found in URL</p>";
+  }
+</script>
+
+</body>
+</html>
