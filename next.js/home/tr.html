@@ -3,233 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Portal - Xperts</title>
+    <title>Student Portal</title>
+    
     <style>
-        :root {
-            --primary-color: #4a69bd;
-            --secondary-color: #6a89cc;
-            --background-color: #f4f7f9;
-            --card-bg-color: #ffffff;
-            --text-color: #333;
-            --text-light-color: #555;
-            --shadow-color: rgba(0, 0, 0, 0.1);
-            --success-color: #27ae60;
-            --danger-color: #e74c3c;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-image: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            background: var(--background-color);
-            padding: 30px 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px var(--shadow-color);
-            transition: all 0.3s ease;
-        }
-
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+        :root { --primary-color: #1a73e8; --present-color: #34a853; --absent-color: #ea4335; --text-color: #3c4043; --light-gray: #f1f3f4; --border-color: #dadce0; }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--light-gray); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 420px; }
+        #login-container h1 { color: var(--primary-color); text-align: center; }
+        #login-form .form-group { margin-bottom: 1rem; text-align: left; }
+        #login-form label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: #5f6368; }
+        #login-form input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
+        #login-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 500; color: #fff; background-color: var(--primary-color); cursor: pointer; transition: background-color 0.3s; margin-top: 1rem; }
+        #login-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #login-error { color: var(--absent-color); margin-top: 1rem; min-height: 20px; font-weight: 500; text-align: center; }
+        #dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        #dashboard-header h2 { margin: 0; color: #202124; font-size: 1rem; font-weight: 500; }
+        #logout-btn { padding: 8px 16px; border: 1px solid var(--absent-color); color: var(--absent-color); background-color: transparent; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+        #logout-btn:hover { background-color: var(--absent-color); color: #fff; }
+        #calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+        #month-year-display { font-size: 1.2rem; font-weight: 500; }
+        .nav-btn { background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #5f6368; padding: 0 10px; }
+        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
+        .day-name { font-weight: 500; color: #5f6368; font-size: 0.9rem; padding-bottom: 10px; }
+        .date-cell { display: flex; justify-content: center; align-items: center; height: 40px; position: relative; border-radius: 8px; transition: background-color 0.2s; }
+        .date-cell.present { background-color: var(--present-color); color: white; }
+        .date-cell.absent { background-color: var(--absent-color); color: white; }
+        .date-number { width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; }
+        .date-cell.today .date-number { background-color: var(--primary-color); color: white; border-radius: 50%; }
+        .date-cell.present.today .date-number, .date-cell.absent.today .date-number { background-color: transparent; }
+        #calendar-status { text-align: center; margin-top: 1rem; font-style: italic; color: #5f6368; min-height: 20px; }
         .hidden { display: none !important; }
-
-        /* --- Login Section --- */
-        #login-section { max-width: 400px; margin: auto; }
-        .login-header { text-align: center; margin-bottom: 30px; }
-        .login-header h1 { color: var(--primary-color); margin: 0; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-light-color); }
-        input[type="text"], input[type="password"] {
-            width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 8px;
-            box-sizing: border-box; font-size: 16px; transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        input[type="text"]:focus, input[type="password"]:focus {
-            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(74, 105, 189, 0.2);
-        }
-
-        button {
-            background-image: linear-gradient(to right, var(--secondary-color), var(--primary-color));
-            color: white; padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer;
-            font-size: 16px; font-weight: 600; width: 100%; transition: all 0.3s; background-size: 200%;
-        }
-        button:hover:not(:disabled) { background-position: right; box-shadow: 0 5px 15px rgba(74, 105, 189, 0.4); }
-        button:disabled { background: #bdc3c7; cursor: not-allowed; }
-        #error-message { color: var(--danger-color); text-align: center; font-weight: 500; min-height: 1.2em; margin-top: 15px; }
-
-        /* --- Dashboard Section --- */
-        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; }
-        #welcome-message { margin: 0; color: var(--primary-color); font-size: 28px; }
-        #logout-btn { background: var(--danger-color); width: auto; padding: 10px 20px; }
-        #logout-btn:hover { background: #c0392b; }
-        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
-        .summary-card { background: var(--card-bg-color); padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px var(--shadow-color); text-align: center; }
-        .card-value { font-size: 36px; font-weight: 700; color: var(--primary-color); }
-        .card-label { font-size: 14px; color: var(--text-light-color); margin-top: 5px; }
-        .results-section h2 { margin-bottom: 20px; color: #2c3e50; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        #results-table { width: 100%; border-collapse: collapse; }
-        #results-table th, #results-table td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        #results-table thead th { background-color: #f9fafb; font-weight: 600; color: #333; }
-        #results-table tbody tr:hover { background-color: #f9fafb; }
-
-        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 40px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .empty-state { text-align: center; padding: 50px; background: #f9fafb; border-radius: 8px; color: var(--text-light-color); }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div id="login-section">
-            <div class="login-header"> <h1>Student Portal</h1> <p>Login to view your performance</p> </div>
-            <form id="login-form">
-                <div class="form-group"> <label for="mobile">Mobile Number</label> <input type="text" id="mobile" required> </div>
-                <div class="form-group"> <label for="password">Password</label> <input type="password" id="password" required> </div>
-                <button type="submit" id="login-btn">Login</button> <p id="error-message"></p>
-            </form>
-        </div>
-        <div id="dashboard-section" class="hidden">
-            <div class="dashboard-header"> <h1 id="welcome-message"></h1> <button id="logout-btn">Logout</button> </div>
-            <div class="summary-cards">
-                <div class="summary-card"> <div class="card-value" id="total-tests">-</div> <div class="card-label">Total Tests Taken</div> </div>
-                <div class="summary-card"> <div class="card-value" id="avg-score">-</div> <div class="card-label">Average Score</div> </div>
-                <div class="summary-card"> <div class="card-value" id="highest-score">-</div> <div class="card-label">Highest Score</div> </div>
+    <div id="login-container" class="container">
+        <h1>Student Portal Login</h1>
+        <form id="login-form">
+            <div class="form-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" required></div>
+            <div class="form-group"><label for="password">Password</label><input type="password" id="password" required></div>
+            <button type="submit" id="login-btn">Login</button>
+            <div id="login-error"></div>
+        </form>
+    </div>
+    <div id="dashboard-container" class="container hidden">
+        <div id="dashboard-header"><h2 id="welcome-message"></h2><button id="logout-btn">Logout</button></div>
+        <div id="calendar-container">
+            <div id="calendar-header">
+                <button id="prev-month-btn" class="nav-btn">&lt;</button><div id="month-year-display"></div><button id="next-month-btn" class="nav-btn">&gt;</button>
             </div>
-            <div class="results-section"> <h2>Detailed Results</h2> <div id="results-container"></div> </div>
+            <div id="calendar-grid"></div><div id="calendar-status"></div>
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-
+    <!-- Load Firebase SDKs first -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
+    
+    <!-- Load your central AuthManager library -->
+    <script src="https://xperts-app.github.io/server/public/auth/auth.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // ##### THIS IS THE FIX #####
-            // The Firebase configuration is now correctly placed here.
             const firebaseConfig = {
-                apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
-                authDomain: "xperts-data.firebaseapp.com",
-                projectId: "xperts-data",
-                storageBucket: "xperts-data.firebasestorage.app",
-                messagingSenderId: "934675149024",
-                appId: "1:934675149024:web:23486a5f38f65f103ce085",
-                measurementId: "G-6TS06NTDZQ"
+              apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+              authDomain: "xperts-data.firebaseapp.com",
+              projectId: "xperts-data",
+              storageBucket: "xperts-data.firebasestorage.app",
+              messagingSenderId: "934675149024",
+              appId: "1:93475149024:web:23486a5f38f65f103ce085",
+              measurementId: "G-6TS06NTDZQ"
             };
 
-            if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
-
-            const loginSection = document.getElementById('login-section');
-            const dashboardSection = document.getElementById('dashboard-section');
+            // Initialize your central authentication manager
+            AuthManager.init(firebaseConfig);
+            
+            // --- DOM Elements ---
+            const loginContainer = document.getElementById('login-container');
+            const dashboardContainer = document.getElementById('dashboard-container');
             const loginForm = document.getElementById('login-form');
+            const mobileInput = document.getElementById('mobile');
+            const passwordInput = document.getElementById('password');
             const loginBtn = document.getElementById('login-btn');
-            const errorMessage = document.getElementById('error-message');
+            const loginError = document.getElementById('login-error');
             const welcomeMessage = document.getElementById('welcome-message');
-            const resultsContainer = document.getElementById('results-container');
             const logoutBtn = document.getElementById('logout-btn');
+            
+            let currentDate = new Date();
+            let currentUserProfile = null;
 
-            const loggedInStudent = localStorage.getItem('studentData');
-            if (loggedInStudent) {
-                showDashboard(JSON.parse(loggedInStudent));
-            }
-
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                errorMessage.textContent = '';
+            // --- New Login Handler using AuthManager ---
+            const handleLogin = async (event) => {
+                event.preventDefault();
+                loginError.textContent = '';
                 loginBtn.disabled = true;
-                loginBtn.textContent = 'Verifying...';
+                loginBtn.textContent = 'Logging in...';
 
-                const mobile = document.getElementById('mobile').value;
-                const password = document.getElementById('password').value;
-
+                const mobile = mobileInput.value.trim();
+                const password = passwordInput.value.trim();
+                
                 try {
-                    const studentQuery = db.collection('users').where('mobileNumber', '==', mobile).where('password', '==', password);
-                    const querySnapshot = await studentQuery.get();
-
-                    if (querySnapshot.empty) {
-                        errorMessage.textContent = 'Invalid mobile number or password.';
+                    const userProfile = await AuthManager.login(mobile, password);
+                    if (userProfile.role === 'Student') {
+                        showDashboard(userProfile);
                     } else {
-                        const studentData = querySnapshot.docs[0].data();
-                        localStorage.setItem('studentData', JSON.stringify(studentData));
-                        showDashboard(studentData);
+                        loginError.textContent = 'Access Denied. Only for students.';
+                        AuthManager.logout(); // Log them out if they are not a student
                     }
                 } catch (error) {
-                    console.error("Login error:", error);
-                    errorMessage.textContent = 'Login failed. A database index is likely required. Check console.';
+                    console.error("Login failed:", error);
+                    loginError.textContent = error.message; // Display the error from AuthManager
                 } finally {
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Login';
                 }
-            });
-
-            function showDashboard(studentData) {
-                loginSection.classList.add('hidden');
-                dashboardSection.classList.remove('hidden');
-                welcomeMessage.textContent = `Welcome, ${studentData.fullName.split(' ')[0]}!`;
-                fetchAndDisplayResults(studentData);
-            }
-
-            async function fetchAndDisplayResults(studentData) {
-                resultsContainer.innerHTML = '<div class="spinner"></div>';
-                try {
-                    const testsSnapshot = await db.collection('tests').where('class', '==', studentData.class).get();
-                    if (testsSnapshot.empty) {
-                        updateSummaryCards(0, 0, 0); // Correctly pass numbers
-                        return resultsContainer.innerHTML = '<div class="empty-state">No tests have been assigned to your class yet.</div>';
-                    }
-                    
-                    const resultPromises = testsSnapshot.docs.map(doc => 
-                        db.collection('tests').doc(doc.id).collection('results').doc(studentData.mobileNumber).get());
-                    
-                    const resultDocs = await Promise.all(resultPromises);
-                    const allResults = [];
-                    resultDocs.forEach((resultDoc, index) => {
-                        if (resultDoc.exists) {
-                            allResults.push({ ...testsSnapshot.docs[index].data(), result: resultDoc.data() });
-                        }
-                    });
-
-                    if (allResults.length === 0) {
-                        updateSummaryCards(0, 0, 0); // Correctly pass numbers
-                        return resultsContainer.innerHTML = '<div class="empty-state">Your marks have not been entered for any available tests.</div>';
-                    }
-
-                    const validMarks = allResults.map(r => r.result.marks).filter(m => m !== null && !isNaN(m));
-                    const totalTests = validMarks.length;
-                    const sumOfScores = validMarks.reduce((sum, mark) => sum + mark, 0);
-                    const averageScore = totalTests > 0 ? (sumOfScores / totalTests) : 0;
-                    const highestScore = totalTests > 0 ? Math.max(...validMarks) : 0;
-                    
-                    updateSummaryCards(totalTests, averageScore, highestScore);
-                    
-                    let tableHTML = `<table id="results-table"><thead><tr><th>Test Title</th><th>Subject</th><th>Your Score</th></tr></thead><tbody>`;
-                    allResults.forEach(item => {
-                        tableHTML += `<tr><td>${item.title}</td><td>${item.subject}</td><td><b>${item.result.marks !== null ? item.result.marks : 'N/A'}</b></td></tr>`;
-                    });
-                    resultsContainer.innerHTML = tableHTML + '</tbody></table>';
-
-                } catch (error) {
-                    console.error("Error fetching results:", error);
-                    resultsContainer.innerHTML = '<div class="empty-state">Could not load your results. Please try again later.</div>';
-                }
-            }
-
-            function updateSummaryCards(total, avg, high) {
-                document.getElementById('total-tests').textContent = total;
-                document.getElementById('avg-score').textContent = avg.toFixed(1);
-                document.getElementById('highest-score').textContent = high;
-            }
+            };
             
-            logoutBtn.addEventListener('click', () => {
-                localStorage.removeItem('studentData');
-                window.location.reload();
-            });
+            const handleLogout = async () => {
+                await AuthManager.logout();
+                location.reload();
+            };
+
+            const showDashboard = (userProfile) => {
+                currentUserProfile = userProfile; // Store user profile for later use
+                loginContainer.classList.add('hidden');
+                dashboardContainer.classList.remove('hidden');
+                welcomeMessage.textContent = `Welcome, ${currentUserProfile.fullName.trim()}!`;
+                renderCalendar(currentDate);
+            };
+
+            const showLoginView = () => {
+                loginContainer.classList.remove('hidden');
+                dashboardContainer.classList.add('hidden');
+            };
+            
+            // --- Calendar logic (unchanged, but now uses currentUserProfile) ---
+            const renderCalendar = async (date) => {
+                const calendarGrid = document.getElementById('calendar-grid');
+                const monthYearDisplay = document.getElementById('month-year-display');
+                calendarGrid.innerHTML = '';
+                const year = date.getFullYear();
+                const month = date.getMonth();
+                monthYearDisplay.textContent = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+                ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(day => { calendarGrid.innerHTML += `<div class="day-name">${day}</div>`; });
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const startOffset = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
+                for (let i = 0; i < startOffset; i++) { calendarGrid.innerHTML += `<div class="date-cell empty"></div>`; }
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const todayClass = (day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear()) ? ' today' : '';
+                    calendarGrid.innerHTML += `<div class="date-cell${todayClass}" data-date="${fullDate}"><div class="date-number">${day}</div></div>`;
+                }
+                await fetchAndApplyAttendance(year, month);
+            };
+            
+            const fetchAndApplyAttendance = async (year, month) => {
+                if (!currentUserProfile) return; // Safety check
+                const studentId = currentUserProfile.id;
+                const calendarStatus = document.getElementById('calendar-status');
+                calendarStatus.textContent = 'Loading attendance...';
+                const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+                try {
+                    const q = AuthManager.db.collection('attendance').where('studentId', '==', studentId).where('date', '>=', startDate).where('date', '<=', endDate);
+                    const snapshot = await q.get();
+                    if (snapshot.empty) { calendarStatus.textContent = 'No records found for this month.'; return; }
+                    const attendanceMap = new Map(snapshot.docs.map(doc => [doc.data().date, doc.data().status]));
+                    document.querySelectorAll('.date-cell[data-date]').forEach(cell => {
+                        const status = attendanceMap.get(cell.dataset.date);
+                        if (status) cell.classList.add(status.toLowerCase());
+                    });
+                    calendarStatus.textContent = '';
+                } catch (error) { console.error("Error fetching attendance:", error); calendarStatus.textContent = 'Error: Data could not load.'; }
+            };
+
+            // --- New Initialization Logic ---
+            const initializeApp = async () => {
+                const userProfile = await AuthManager.getUserProfile();
+                if (userProfile && userProfile.role === 'Student') {
+                    console.log("User already logged in:", userProfile);
+                    showDashboard(userProfile);
+                } else {
+                    console.log("No user logged in or user is not a student.");
+                    showLoginView();
+                }
+            };
+            
+            document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(currentDate); });
+            document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(currentDate); });
+            loginForm.addEventListener('submit', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            
+            initializeApp(); // Run the app
         });
     </script>
 </body>
