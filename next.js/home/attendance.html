@@ -1,233 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Portal</title>
-    
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-        :root { --primary-color: #1a73e8; --present-color: #34a853; --absent-color: #ea4335; --text-color: #3c4043; --light-gray: #f1f3f4; --border-color: #dadce0; }
-        body { font-family: 'Roboto', sans-serif; background-color: var(--light-gray); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: #ffffff; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; max-width: 420px; }
-        #login-container h1 { color: var(--primary-color); text-align: center; }
-        #login-form .form-group { margin-bottom: 1rem; text-align: left; }
-        #login-form label { display: block; font-weight: 500; margin-bottom: 0.5rem; color: #5f6368; }
-        #login-form input { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 1rem; box-sizing: border-box; }
-        #login-btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 500; color: #fff; background-color: var(--primary-color); cursor: pointer; transition: background-color 0.3s; margin-top: 1rem; }
-        #login-btn:disabled { background-color: #ccc; cursor: not-allowed; }
-        #login-error { color: var(--absent-color); margin-top: 1rem; min-height: 20px; font-weight: 500; text-align: center; }
-        #dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-        #dashboard-header h2 { margin: 0; color: #202124; font-size: 1rem; font-weight: 500; }
-        #logout-btn { padding: 8px 16px; border: 1px solid var(--absent-color); color: var(--absent-color); background-color: transparent; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
-        #logout-btn:hover { background-color: var(--absent-color); color: #fff; }
-        #calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-        #month-year-display { font-size: 1.2rem; font-weight: 500; }
-        .nav-btn { background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #5f6368; padding: 0 10px; }
-        #calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .day-name { font-weight: 500; color: #5f6368; font-size: 0.9rem; padding-bottom: 10px; }
-        
-        .date-cell {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 40px;
-            position: relative;
-            border-radius: 8px; /* Rounded corners for highlights */
-            transition: background-color 0.2s;
-        }
-        
-        /* --- NEW STYLES FOR BACKGROUND HIGHLIGHT --- */
-        .date-cell.present {
-            background-color: var(--present-color);
-            color: white;
-        }
-        .date-cell.absent {
-            background-color: var(--absent-color);
-            color: white;
-        }
-        
-        .date-number {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* Today's date circle */
-        .date-cell.today .date-number {
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: 50%;
-        }
-
-        /* If a day is today AND has attendance, hide the blue circle so the full highlight shows */
-        .date-cell.present.today .date-number,
-        .date-cell.absent.today .date-number {
-            background-color: transparent;
-        }
-        
-        #calendar-status { text-align: center; margin-top: 1rem; font-style: italic; color: #5f6368; min-height: 20px; }
-        .hidden { display: none !important; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome - ALLEN Digital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary-blue: #0066ff; --background-color: #f0f4f9; --text-dark: #1d2c3c; --text-light: #5a6b7d; }
+    body { font-family: 'Poppins', sans-serif; background-color: var(--background-color); margin: 0; }
+    #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--background-color); display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.3s; }
+    .spinner { width: 50px; height: 50px; border: 5px solid rgba(0, 102, 255, 0.2); border-top-color: var(--primary-blue); border-radius: 50%; animation: spin 1s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .main-container { display: none; max-width: 450px; margin: auto; padding: 5vh 20px 20px 20px; text-align: center; }
+    .illustration{width:180px;height:180px;margin:0 auto 30px auto}
+    h2{font-weight:600;font-size:28px;color:var(--text-dark);margin-bottom:12px}
+    p.subtitle{color:var(--text-light);font-size:16px;margin-bottom:40px;line-height:1.6}
+    .input-group{margin-bottom:25px;text-align:left}
+    label{display:block;margin-bottom:8px;font-weight:500;font-size:14px;color:var(--text-dark)}
+    input{width:100%;padding:15px;border:1px solid #dbe2ea;border-radius:12px;font-size:16px;box-sizing:border-box;font-family:'Poppins',sans-serif;transition:border-color .3s,box-shadow .3s}
+    input:focus{outline:0;border-color:var(--primary-blue);box-shadow:0 0 0 4px rgba(0,102,255,.1)}
+    .btn-primary{background-color:var(--primary-blue);color:#fff;border:none;padding:16px 0;border-radius:12px;font-size:18px;font-weight:600;width:100%;cursor:pointer;transition:background-color .3s}
+    .btn-primary:disabled{background-color:#a0cffd;cursor:not-allowed}
+    #password-container{display:none}
+    .error-msg{color:#dc3545;font-weight:500;margin-top:20px;min-height:1.2em}
+  </style>
 </head>
 <body>
-    <div id="login-container" class="container">
-        <h1>Student Portal Login</h1>
-        <form id="login-form">
-            <div class="form-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" required></div>
-            <div class="form-group"><label for="password">Password</label><input type="password" id="password" required></div>
-            <button type="submit" id="login-btn">Login</button>
-            <div id="login-error"></div>
-        </form>
+  <div id="loading-overlay"><div class="spinner"></div></div>
+  <div class="main-container" id="login-container">
+    <h2>Welcome Back!</h2>
+    <p class="subtitle">Enter your mobile number to sign in and continue your learning journey.</p>
+    <div id="login-form">
+      <div class="input-group"><label for="mobile">Mobile Number</label><input type="tel" id="mobile" name="mobile" placeholder="10-digit mobile number" maxlength="10"></div>
+      <div id="password-container"><div class="input-group"><label for="password">Password</label><input type="password" id="password" name="password" placeholder="Enter your password"></div></div>
+      <button type="button" class="btn-primary" id="submit-btn">Continue</button>
+      <p id="error-message" class="error-msg"></p>
     </div>
-    <div id="dashboard-container" class="container hidden">
-        <div id="dashboard-header"><h2 id="welcome-message"></h2><button id="logout-btn">Logout</button></div>
-        <div id="calendar-container">
-            <div id="calendar-header">
-                <button id="prev-month-btn" class="nav-btn">&lt;</button><div id="month-year-display"></div><button id="next-month-btn" class="nav-btn">&gt;</button>
-            </div>
-            <div id="calendar-grid"></div><div id="calendar-status"></div>
-        </div>
-    </div>
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-firestore.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const firebaseConfig = {
-              apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
-              authDomain: "xperts-data.firebaseapp.com",
-              projectId: "xperts-data",
-              storageBucket: "xperts-data.firebasestorage.app",
-              messagingSenderId: "934675149024",
-              appId: "1:93475149024:web:23486a5f38f65f103ce085",
-              measurementId: "G-6TS06NTDZQ"
-            };
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
+  </div>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+      authDomain: "xperts-data.firebaseapp.com",
+      projectId: "xperts-data",
+      storageBucket: "xperts-data.firebasestorage.app",
+      messagingSenderId: "934675149024",
+      appId: "1:934675149024:web:23486a5f38f65f103ce085",
+      measurementId: "G-6TS06NTDZQ"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-            const loginContainer = document.getElementById('login-container');
-            const dashboardContainer = document.getElementById('dashboard-container');
-            const loginForm = document.getElementById('login-form');
-            const mobileInput = document.getElementById('mobile');
-            const passwordInput = document.getElementById('password');
-            const loginBtn = document.getElementById('login-btn');
-            const loginError = document.getElementById('login-error');
-            const welcomeMessage = document.getElementById('welcome-message');
-            const logoutBtn = document.getElementById('logout-btn');
-            
-            let currentDate = new Date();
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const loginContainer = document.getElementById('login-container');
+    const mobileInput = document.getElementById('mobile');
+    const passwordInput = document.getElementById('password');
+    const passwordContainer = document.getElementById('password-container');
+    const submitBtn = document.getElementById('submit-btn');
+    const errorMessage = document.getElementById('error-message');
 
-            const handleLogin = async (event) => {
-                event.preventDefault();
-                loginError.textContent = '';
-                loginBtn.disabled = true;
-                loginBtn.textContent = 'Logging in...';
+    window.addEventListener('load', () => {
+      setTimeout(() => { loadingOverlay.style.opacity = '0'; loadingOverlay.style.pointerEvents = 'none'; loginContainer.style.display = 'block'; }, 800);
+    });
 
-                const mobile = mobileInput.value.trim();
-                const password = passwordInput.value.trim();
-                
-                if (!mobile || !password) {
-                    loginError.textContent = 'Please enter mobile and password.';
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Login';
-                    return;
-                }
+    async function checkSession() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (userId) {
+        try {
+          const userDoc = await db.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            const userData = userDoc.data();
+            localStorage.setItem('loggedInUserRole', userData.role);
+            localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
+            localStorage.setItem('loggedInUserName', userData.fullName);
+            redirectUser(userData.role, userData.isAllowed);
+          } else {
+            localStorage.clear();
+          }
+        } catch (error) {
+          console.error("Session check error:", error);
+          localStorage.clear();
+        }
+      }
+    }
 
-                try {
-                    const usersRef = db.collection('users');
-                    const snapshot = await usersRef.where('mobileNumber', '==', mobile).get();
+    function redirectUser(role, isAllowed) {
+      if (role === 'Student') {
+        if (isAllowed) { window.location.href = "student_portal.html"; }
+        else { window.location.href = "unverified.html"; }
+      } else if (role === 'Teacher') {
+        window.location.href = "https://apple.com";
+      } else if (role === 'Admin') {
+        window.location.href = "3.html";
+      } else {
+        window.location.href = "unverified.html";
+      }
+    }
 
-                    if (snapshot.empty) {
-                        loginError.textContent = 'No user found with this mobile number.';
-                        return;
-                    }
+    let currentUser = null;
+    submitBtn.addEventListener('click', async () => {
+      errorMessage.textContent = '';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Please wait...';
+      const mobile = mobileInput.value.trim();
+      if (!mobile.match(/^[0-9]{10}$/)) {
+        errorMessage.textContent = 'Please enter a valid 10-digit mobile number.';
+        submitBtn.disabled = false; submitBtn.textContent = 'Continue'; return;
+      }
+      try {
+        const snapshot = await db.collection('users').where('mobileNumber','==',mobile).get();
+        if (snapshot.empty) { window.location.href = "2.html"; return; }
+        currentUser = snapshot.docs[0]; const userData = currentUser.data();
+        if (!passwordContainer.style.display || passwordContainer.style.display === 'none') {
+          passwordContainer.style.display = 'block'; submitBtn.textContent = 'Sign In'; submitBtn.disabled = false;
+        } else {
+          const password = passwordInput.value.trim();
+          if (userData && userData.password === password) {
+            localStorage.setItem('loggedInUserId', currentUser.id);
+            localStorage.setItem('loggedInUserRole', userData.role);
+            localStorage.setItem('loggedInUserIsAllowed', userData.isAllowed);
+            localStorage.setItem('loggedInUserName', userData.fullName);
+            redirectUser(userData.role, userData.isAllowed);
+          } else {
+            errorMessage.textContent = 'Invalid password. Please try again.'; submitBtn.disabled = false; submitBtn.textContent = 'Sign In';
+          }
+        }
+      } catch (error) {
+        console.error("Login error:", error);
+        errorMessage.textContent = 'An error occurred. Please try again.'; submitBtn.disabled = false; submitBtn.textContent = 'Continue';
+      }
+    });
 
-                    const userDoc = snapshot.docs[0];
-                    const userData = userDoc.data();
-
-                    if (userData.password && userData.password === password) {
-                        if (userData.role && userData.role === 'Student') {
-                            sessionStorage.setItem('studentId', userDoc.id);
-                            sessionStorage.setItem('studentName', userData.fullName);
-                            showDashboard();
-                        } else {
-                            loginError.textContent = 'Access Denied. Only for students.';
-                        }
-                    } else {
-                        loginError.textContent = 'Invalid password. Please try again.';
-                    }
-                } catch (error) {
-                    console.error("CRITICAL ERROR DURING LOGIN:", error);
-                    loginError.textContent = 'A system error occurred. Check console.';
-                } finally {
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = 'Login';
-                }
-            };
-            
-            const handleLogout = () => { sessionStorage.clear(); location.reload(); };
-
-            const showDashboard = () => {
-                loginContainer.classList.add('hidden');
-                dashboardContainer.classList.remove('hidden');
-                welcomeMessage.textContent = `Welcome, ${sessionStorage.getItem('studentName').trim()}!`;
-                renderCalendar(currentDate);
-            };
-
-            const showLoginView = () => {
-                loginContainer.classList.remove('hidden');
-                dashboardContainer.classList.add('hidden');
-            };
-
-            const renderCalendar = async (date) => {
-                const calendarGrid = document.getElementById('calendar-grid');
-                const monthYearDisplay = document.getElementById('month-year-display');
-                calendarGrid.innerHTML = '';
-                const year = date.getFullYear();
-                const month = date.getMonth();
-                monthYearDisplay.textContent = date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
-                ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach(day => { calendarGrid.innerHTML += `<div class="day-name">${day}</div>`; });
-                const firstDayOfMonth = new Date(year, month, 1).getDay();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const startOffset = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1;
-                for (let i = 0; i < startOffset; i++) { calendarGrid.innerHTML += `<div class="date-cell empty"></div>`; }
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                    const todayClass = (day === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear()) ? ' today' : '';
-                    calendarGrid.innerHTML += `<div class="date-cell${todayClass}" data-date="${fullDate}"><div class="date-number">${day}</div></div>`;
-                }
-                await fetchAndApplyAttendance(year, month);
-            };
-            
-            const fetchAndApplyAttendance = async (year, month) => {
-                const studentId = sessionStorage.getItem('studentId');
-                const calendarStatus = document.getElementById('calendar-status');
-                if (!studentId) return;
-                calendarStatus.textContent = 'Loading attendance...';
-                const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
-                try {
-                    const q = db.collection('attendance').where('studentId', '==', studentId).where('date', '>=', startDate).where('date', '<=', endDate);
-                    const snapshot = await q.get();
-                    if (snapshot.empty) { calendarStatus.textContent = 'No records found for this month.'; return; }
-                    const attendanceMap = new Map(snapshot.docs.map(doc => [doc.data().date, doc.data().status]));
-                    document.querySelectorAll('.date-cell[data-date]').forEach(cell => {
-                        const status = attendanceMap.get(cell.dataset.date);
-                        if (status) cell.classList.add(status.toLowerCase());
-                    });
-                    calendarStatus.textContent = '';
-                } catch (error) { console.error("Error fetching attendance:", error); calendarStatus.textContent = 'Error: Data could not load.'; }
-            };
-
-            document.getElementById('prev-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() - 1); renderCalendar(currentDate); });
-            document.getElementById('next-month-btn').addEventListener('click', () => { currentDate.setMonth(currentDate.getMonth() + 1); renderCalendar(currentDate); });
-            loginForm.addEventListener('submit', handleLogin);
-            logoutBtn.addEventListener('click', handleLogout);
-            if (sessionStorage.getItem('studentId')) { showDashboard(); } else { showLoginView(); }
-        });
-    </script>
+    checkSession();
+  </script>
 </body>
 </html>
