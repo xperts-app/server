@@ -3,44 +3,146 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Profile</title>
+  <title>Profile - ALLEN Digital</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
   <style>
-    body { font-family: 'Poppins', sans-serif; background: #f0f4f9; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-    .container { background: #fff; padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    h2 { margin-top: 0; color: #1d2c3c; }
-    .form-group { margin-bottom: 1rem; text-align: left; }
-    label { display: block; margin-bottom: 6px; font-weight: 500; }
-    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
-    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
-    .btn-primary { background: #0066ff; color: #fff; }
-    .btn-danger { background: #e63946; color: #fff; margin-top: 10px; }
-    .status { margin-top: 1rem; font-weight: 500; min-height: 1.2em; }
-    .success { color: #34a853; }
-    .error { color: #e63946; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      margin: 0;
+      background: #f5f7fb;
+      color: #1d2c3c;
+    }
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #e0e6ed;
+      border-radius: 12px;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .section-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+    .edit-btn {
+      color: #0066ff;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .field {
+      margin: 8px 0;
+    }
+    .field strong {
+      display: inline-block;
+      width: 120px;
+      font-weight: 500;
+    }
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: flex-end;
+    }
+    .modal-content {
+      background: #fff;
+      width: 100%;
+      max-width: 500px;
+      border-radius: 20px 20px 0 0;
+      padding: 20px;
+    }
+    .modal h3 {
+      margin-top: 0;
+    }
+    .modal input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #dbe2ea;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 15px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+    }
+    .btn {
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+    }
+    .btn.cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+    .btn.save {
+      background: #0066ff;
+      color: white;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>My Profile</h2>
-    <form id="profile-form">
-      <div class="form-group">
-        <label for="fullName">Full Name</label>
-        <input type="text" id="fullName" required>
+    <h2>Personal Details</h2>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Contact Details</h3>
+        <span class="edit-btn" onclick="openEdit('contact')">Edit</span>
       </div>
-      <div class="form-group">
-        <label for="mobileNumber">Mobile Number</label>
-        <input type="tel" id="mobileNumber" maxlength="10" required>
+      <div class="field"><strong>Phone Number:</strong> <span id="phone-display"></span></div>
+      <div class="field"><strong>Email:</strong> <span id="email-display"></span></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header">
+        <h3>Student Details</h3>
+        <span class="edit-btn" onclick="openEdit('student')">Edit</span>
       </div>
-      <div class="form-group">
-        <label for="password">Password (leave blank to keep unchanged)</label>
-        <input type="password" id="password">
-      </div>
-      <button type="submit" class="btn btn-primary">Save Changes</button>
-    </form>
-    <button id="logout-btn" class="btn btn-danger">Logout</button>
-    <div id="status" class="status"></div>
+      <div class="field"><strong>Gender:</strong> <span id="gender-display"></span></div>
+      <div class="field"><strong>Blood Group:</strong> <span id="blood-display"></span></div>
+    </div>
   </div>
 
+  <!-- Edit Modal -->
+  <div class="modal" id="edit-modal">
+    <div class="modal-content">
+      <h3 id="modal-title">Edit</h3>
+      <form id="edit-form">
+        <div id="edit-fields"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn cancel" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="btn save">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script>
@@ -50,67 +152,71 @@
       projectId: "xperts-data",
       storageBucket: "xperts-data.firebasestorage.app",
       messagingSenderId: "934675149024",
-      appId: "1:934675149024:web:23486a5f38f65f103ce085",
-      measurementId: "G-6TS06NTDZQ"
+      appId: "1:934675149024:web:23486a5f38f65f103ce085"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    const fullNameInput = document.getElementById('fullName');
-    const mobileInput = document.getElementById('mobileNumber');
-    const passwordInput = document.getElementById('password');
-    const statusMsg = document.getElementById('status');
-    const logoutBtn = document.getElementById('logout-btn');
-
     const userId = localStorage.getItem('loggedInUserId');
-    if (!userId) {
-      window.location.href = "index.html"; // back to login
-    }
+    let currentUserData = {};
 
     async function loadProfile() {
-      try {
-        const doc = await db.collection('users').doc(userId).get();
-        if (!doc.exists) { throw new Error("User not found"); }
-        const data = doc.data();
-        fullNameInput.value = data.fullName || '';
-        mobileInput.value = data.mobileNumber || '';
-      } catch (err) {
-        console.error(err);
-        statusMsg.textContent = "Error loading profile.";
-        statusMsg.className = "status error";
-      }
+      if (!userId) return window.location.href = "login.html";
+      const doc = await db.collection("users").doc(userId).get();
+      if (!doc.exists) return alert("User not found");
+      currentUserData = doc.data();
+
+      document.getElementById("phone-display").innerText = currentUserData.mobileNumber || "";
+      document.getElementById("email-display").innerText = currentUserData.email || "";
+      document.getElementById("gender-display").innerText = currentUserData.gender || "";
+      document.getElementById("blood-display").innerText = currentUserData.bloodGroup || "";
     }
 
-    document.getElementById('profile-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      statusMsg.textContent = "Saving...";
-      statusMsg.className = "status";
+    function openEdit(type) {
+      const modal = document.getElementById("edit-modal");
+      const fields = document.getElementById("edit-fields");
+      const title = document.getElementById("modal-title");
+      fields.innerHTML = "";
+      
+      if (type === "contact") {
+        title.innerText = "Edit Contact Details";
+        fields.innerHTML = `
+          <label>Phone Number</label>
+          <input type="text" id="edit-phone" value="${currentUserData.mobileNumber || ''}">
+          <label>Email</label>
+          <input type="email" id="edit-email" value="${currentUserData.email || ''}">
+        `;
+      } else if (type === "student") {
+        title.innerText = "Edit Student Details";
+        fields.innerHTML = `
+          <label>Gender</label>
+          <input type="text" id="edit-gender" value="${currentUserData.gender || ''}">
+          <label>Blood Group</label>
+          <input type="text" id="edit-blood" value="${currentUserData.bloodGroup || ''}">
+        `;
+      }
 
-      const updates = {
-        fullName: fullNameInput.value.trim(),
-        mobileNumber: mobileInput.value.trim()
+      modal.style.display = "flex";
+
+      document.getElementById("edit-form").onsubmit = async (e) => {
+        e.preventDefault();
+        let updates = {};
+        if (type === "contact") {
+          updates.mobileNumber = document.getElementById("edit-phone").value;
+          updates.email = document.getElementById("edit-email").value;
+        } else if (type === "student") {
+          updates.gender = document.getElementById("edit-gender").value;
+          updates.bloodGroup = document.getElementById("edit-blood").value;
+        }
+        await db.collection("users").doc(userId).update(updates);
+        closeModal();
+        loadProfile();
       };
-      if (passwordInput.value.trim()) {
-        updates.password = passwordInput.value.trim();
-      }
+    }
 
-      try {
-        await db.collection('users').doc(userId).update(updates);
-        localStorage.setItem('loggedInUserName', updates.fullName);
-        statusMsg.textContent = "Profile updated successfully.";
-        statusMsg.className = "status success";
-        passwordInput.value = "";
-      } catch (err) {
-        console.error(err);
-        statusMsg.textContent = "Error updating profile.";
-        statusMsg.className = "status error";
-      }
-    });
-
-    logoutBtn.addEventListener('click', () => {
-      localStorage.clear();
-      window.location.href = "index.html";
-    });
+    function closeModal() {
+      document.getElementById("edit-modal").style.display = "none";
+    }
 
     loadProfile();
   </script>
