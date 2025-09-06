@@ -3,138 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Profile</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+  <title>My Profile</title>
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      background-color: #f5f7fb;
-      color: #1d2c3c;
-    }
-    .container {
-      max-width: 500px;
-      margin: auto;
-      padding: 20px;
-    }
-    .header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .header h2 {
-      margin-left: 10px;
-      font-size: 20px;
-      font-weight: 600;
-    }
-    .profile-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-    .profile-card h3 {
-      margin: 0 0 5px 0;
-      font-size: 22px;
-      font-weight: 700;
-    }
-    .profile-card p {
-      margin: 4px 0;
-      color: #5a6b7d;
-    }
-    .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-top: 8px;
-      font-weight: 600;
-    }
-    .badge.enrolled {
-      background: #28a745;
-      color: #fff;
-    }
-    .badge.selfstudy {
-      background: #007bff;
-      color: #fff;
-    }
-    .section {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .section-header h4 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .edit-link {
-      color: #0066ff;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .detail-item {
-      margin-bottom: 10px;
-    }
-    .detail-item label {
-      display: block;
-      font-size: 13px;
-      color: #5a6b7d;
-    }
-    .detail-item span {
-      font-size: 15px;
-      font-weight: 500;
-      color: #1d2c3c;
-    }
+    body { font-family: 'Poppins', sans-serif; background: #f0f4f9; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    .container { background: #fff; padding: 2rem; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    h2 { margin-top: 0; color: #1d2c3c; }
+    .form-group { margin-bottom: 1rem; text-align: left; }
+    label { display: block; margin-bottom: 6px; font-weight: 500; }
+    input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #0066ff; color: #fff; }
+    .btn-danger { background: #e63946; color: #fff; margin-top: 10px; }
+    .status { margin-top: 1rem; font-weight: 500; min-height: 1.2em; }
+    .success { color: #34a853; }
+    .error { color: #e63946; }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <button onclick="window.history.back()">⬅</button>
-      <h2>Personal Details</h2>
-    </div>
-
-    <!-- Student Details -->
-    <div class="profile-card" id="profile-header">
-      <h3 id="fullName">Loading...</h3>
-      <p id="studentClass"></p>
-      <span class="badge" id="statusBadge"></span>
-    </div>
-
-    <!-- Additional Details -->
-    <div class="section">
-      <div class="section-header">
-        <h4>Additional Details</h4>
-        <span class="edit-link">Edit</span>
+    <h2>My Profile</h2>
+    <form id="profile-form">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input type="text" id="fullName" required>
       </div>
-      <div class="detail-item"><label>Email</label><span id="email"></span></div>
-      <div class="detail-item"><label>Password</label><span id="password"></span></div>
-      <div class="detail-item"><label>Date of Birth</label><span id="dob"></span></div>
-    </div>
-
-    <!-- Parent Details -->
-    <div class="section">
-      <div class="section-header">
-        <h4>Parent Details</h4>
-        <span class="edit-link">Edit</span>
+      <div class="form-group">
+        <label for="mobileNumber">Mobile Number</label>
+        <input type="tel" id="mobileNumber" maxlength="10" required>
       </div>
-      <div class="detail-item"><label>Parent Name</label><span id="parentName"></span></div>
-    </div>
+      <div class="form-group">
+        <label for="password">Password (leave blank to keep unchanged)</label>
+        <input type="password" id="password">
+      </div>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+    <button id="logout-btn" class="btn btn-danger">Logout</button>
+    <div id="status" class="status"></div>
   </div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script>
@@ -144,197 +50,67 @@
       projectId: "xperts-data",
       storageBucket: "xperts-data.firebasestorage.app",
       messagingSenderId: "934675149024",
-      appId: "1:934675149024:web:23486a5f38f65f103ce085"
+      appId: "1:934675149024:web:23486a5f38f65f103ce085",
+      measurementId: "G-6TS06NTDZQ"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    const fullNameInput = document.getElementById('fullName');
+    const mobileInput = document.getElementById('mobileNumber');
+    const passwordInput = document.getElementById('password');
+    const statusMsg = document.getElementById('status');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const userId = localStorage.getItem('loggedInUserId');
+    if (!userId) {
+      window.location.href = "index.html"; // back to login
+    }
+
     async function loadProfile() {
-      const userId = localStorage.getItem('loggedInUserId');
-      if (!userId) {
-        alert("Not logged in.");
-        window.location.href = "index.html";
-        return;
+      try {
+        const doc = await db.collection('users').doc(userId).get();
+        if (!doc.exists) { throw new Error("User not found"); }
+        const data = doc.data();
+        fullNameInput.value = data.fullName || '';
+        mobileInput.value = data.mobileNumber || '';
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = "Error loading profile.";
+        statusMsg.className = "status error";
+      }
+    }
+
+    document.getElementById('profile-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusMsg.textContent = "Saving...";
+      statusMsg.className = "status";
+
+      const updates = {
+        fullName: fullNameInput.value.trim(),
+        mobileNumber: mobileInput.value.trim()
+      };
+      if (passwordInput.value.trim()) {
+        updates.password = passwordInput.value.trim();
       }
 
       try {
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) {
-          alert("User not found.");
-          return;
-        }
-        const data = userDoc.data();
-
-        // Student Info
-        document.getElementById('fullName').textContent = data.fullName || "No Name";
-        document.getElementById('studentClass').textContent = `Class ${data.class || "-"} | ${data.goal || "-"}`;
-
-        // ✅ Status badge condition
-        const statusBadge = document.getElementById('statusBadge');
-        if (data.isAllowed) {
-          statusBadge.textContent = "ENROLLED STUDENT";
-          statusBadge.classList.add("enrolled");
-        } else {
-          statusBadge.textContent = "SELF STUDY PLAN";
-          statusBadge.classList.add("selfstudy");
-        }
-
-        // Additional
-        document.getElementById('email').textContent = data.email || "-";
-        document.getElementById('password').textContent = data.password || "-";
-        document.getElementById('dob').textContent = data.dob || "-";
-
-        // Parent
-        document.getElementById('parentName').textContent = data.parentName || "-";
-      } catch (e) {
-        console.error("Error loading profile:", e);
+        await db.collection('users').doc(userId).update(updates);
+        localStorage.setItem('loggedInUserName', updates.fullName);
+        statusMsg.textContent = "Profile updated successfully.";
+        statusMsg.className = "status success";
+        passwordInput.value = "";
+      } catch (err) {
+        console.error(err);
+        statusMsg.textContent = "Error updating profile.";
+        statusMsg.className = "status error";
       }
-    }
+    });
 
-    loadProfile();
-  </script>
-</body>
-  </html>
-margin-bottom: 20px;
-    }
-    .profile-card h3 {
-      margin: 0 0 5px 0;
-      font-size: 22px;
-      font-weight: 700;
-    }
-    .profile-card p {
-      margin: 4px 0;
-      color: #5a6b7d;
-    }
-    .badge {
-      display: inline-block;
-      padding: 5px 12px;
-      background: #444;
-      color: #fff;
-      border-radius: 6px;
-      font-size: 12px;
-      margin-top: 8px;
-    }
-    .section {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .section-header h4 {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-    .edit-link {
-      color: #0066ff;
-      font-size: 14px;
-      cursor: pointer;
-    }
-    .detail-item {
-      margin-bottom: 10px;
-    }
-    .detail-item label {
-      display: block;
-      font-size: 13px;
-      color: #5a6b7d;
-    }
-    .detail-item span {
-      font-size: 15px;
-      font-weight: 500;
-      color: #1d2c3c;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <button onclick="window.history.back()">⬅</button>
-      <h2>Personal Details</h2>
-    </div>
-
-    <!-- Student Details -->
-    <div class="profile-card" id="profile-header">
-      <h3 id="fullName">Loading...</h3>
-      <p id="studentClass"></p>
-      <span class="badge" id="statusBadge"></span>
-    </div>
-
-    <!-- Additional Details -->
-    <div class="section">
-      <div class="section-header">
-        <h4>Additional Details</h4>
-        <span class="edit-link">Edit</span>
-      </div>
-      <div class="detail-item"><label>Email</label><span id="email"></span></div>
-      <div class="detail-item"><label>Password</label><span id="password"></span></div>
-      <div class="detail-item"><label>Date of Birth</label><span id="dob"></span></div>
-    </div>
-
-    <!-- Parent Details -->
-    <div class="section">
-      <div class="section-header">
-        <h4>Parent Details</h4>
-        <span class="edit-link">Edit</span>
-      </div>
-      <div class="detail-item"><label>Parent Name</label><span id="parentName"></span></div>
-    </div>
-  </div>
-
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
-      authDomain: "xperts-data.firebaseapp.com",
-      projectId: "xperts-data",
-      storageBucket: "xperts-data.firebasestorage.app",
-      messagingSenderId: "934675149024",
-      appId: "1:934675149024:web:23486a5f38f65f103ce085"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    async function loadProfile() {
-      const userId = localStorage.getItem('loggedInUserId');
-      if (!userId) {
-        alert("Not logged in.");
-        window.location.href = "index.html";
-        return;
-      }
-
-      try {
-        const userDoc = await db.collection('users').doc(userId).get();
-        if (!userDoc.exists) {
-          alert("User not found.");
-          return;
-        }
-        const data = userDoc.data();
-
-        // Student Info
-        document.getElementById('fullName').textContent = data.fullName || "No Name";
-        document.getElementById('studentClass').textContent = `Class ${data.class || "-"} | ${data.goal || "-"}`;
-        document.getElementById('statusBadge').textContent = data.isAllowed ? "ENROLLED STUDENT" : "PENDING";
-
-        // Additional
-        document.getElementById('email').textContent = data.email || "-";
-        document.getElementById('password').textContent = data.password || "-";
-        document.getElementById('dob').textContent = data.dob || "-";
-
-        // Parent
-        document.getElementById('parentName').textContent = data.parentName || "-";
-      } catch (e) {
-        console.error("Error loading profile:", e);
-      }
-    }
+    logoutBtn.addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
 
     loadProfile();
   </script>
