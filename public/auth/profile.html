@@ -48,6 +48,167 @@
     .badge {
       display: inline-block;
       padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    .badge.enrolled {
+      background: #28a745;
+      color: #fff;
+    }
+    .badge.selfstudy {
+      background: #007bff;
+      color: #fff;
+    }
+    .section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .section-header h4 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .edit-link {
+      color: #0066ff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .detail-item {
+      margin-bottom: 10px;
+    }
+    .detail-item label {
+      display: block;
+      font-size: 13px;
+      color: #5a6b7d;
+    }
+    .detail-item span {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1d2c3c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <button onclick="window.history.back()">⬅</button>
+      <h2>Personal Details</h2>
+    </div>
+
+    <!-- Student Details -->
+    <div class="profile-card" id="profile-header">
+      <h3 id="fullName">Loading...</h3>
+      <p id="studentClass"></p>
+      <span class="badge" id="statusBadge"></span>
+    </div>
+
+    <!-- Additional Details -->
+    <div class="section">
+      <div class="section-header">
+        <h4>Additional Details</h4>
+        <span class="edit-link">Edit</span>
+      </div>
+      <div class="detail-item"><label>Email</label><span id="email"></span></div>
+      <div class="detail-item"><label>Password</label><span id="password"></span></div>
+      <div class="detail-item"><label>Date of Birth</label><span id="dob"></span></div>
+    </div>
+
+    <!-- Parent Details -->
+    <div class="section">
+      <div class="section-header">
+        <h4>Parent Details</h4>
+        <span class="edit-link">Edit</span>
+      </div>
+      <div class="detail-item"><label>Parent Name</label><span id="parentName"></span></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+      authDomain: "xperts-data.firebaseapp.com",
+      projectId: "xperts-data",
+      storageBucket: "xperts-data.firebasestorage.app",
+      messagingSenderId: "934675149024",
+      appId: "1:934675149024:web:23486a5f38f65f103ce085"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    async function loadProfile() {
+      const userId = localStorage.getItem('loggedInUserId');
+      if (!userId) {
+        alert("Not logged in.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      try {
+        const userDoc = await db.collection('users').doc(userId).get();
+        if (!userDoc.exists) {
+          alert("User not found.");
+          return;
+        }
+        const data = userDoc.data();
+
+        // Student Info
+        document.getElementById('fullName').textContent = data.fullName || "No Name";
+        document.getElementById('studentClass').textContent = `Class ${data.class || "-"} | ${data.goal || "-"}`;
+
+        // ✅ Status badge condition
+        const statusBadge = document.getElementById('statusBadge');
+        if (data.isAllowed) {
+          statusBadge.textContent = "ENROLLED STUDENT";
+          statusBadge.classList.add("enrolled");
+        } else {
+          statusBadge.textContent = "SELF STUDY PLAN";
+          statusBadge.classList.add("selfstudy");
+        }
+
+        // Additional
+        document.getElementById('email').textContent = data.email || "-";
+        document.getElementById('password').textContent = data.password || "-";
+        document.getElementById('dob').textContent = data.dob || "-";
+
+        // Parent
+        document.getElementById('parentName').textContent = data.parentName || "-";
+      } catch (e) {
+        console.error("Error loading profile:", e);
+      }
+    }
+
+    loadProfile();
+  </script>
+</body>
+  </html>
+margin-bottom: 20px;
+    }
+    .profile-card h3 {
+      margin: 0 0 5px 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .profile-card p {
+      margin: 4px 0;
+      color: #5a6b7d;
+    }
+    .badge {
+      display: inline-block;
+      padding: 5px 12px;
       background: #444;
       color: #fff;
       border-radius: 6px;
