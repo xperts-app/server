@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subject Test</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6fa;
+        }
+
+        .header {
+            background-color: #ffffff;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .back-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background-color: #f0f2f5; 
+            border-radius: 50%;
+            text-decoration: none;
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 15px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .header h1 {
+            font-size: 1.25em;
+            margin: 0;
+            color: #1c1e21;
+        }
+
+        .document-list {
+            padding: 20px;
+        }
+
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px; 
+            margin-bottom: 15px;
+            text-decoration: none;
+            color: #1c1e21;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .document-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+        }
+
+        .document-item .title {
+            font-size: 1em;
+            font-weight: 500;
+        }
+
+        .document-item .arrow {
+            font-size: 1.5em;
+            color: #888;
+        }
+
+        /* === FOOTER EDITED HERE === */
+        .footer-message {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .footer-message p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.5;
+        }
+        .footer-line-1 {
+            font-weight: 600; /* Bold text */
+            color: #333; /* Darker text color */
+            font-size: 1em;
+            margin-bottom: 4px; /* Space between the two lines */
+        }
+        .footer-line-2 {
+            font-size: 0.9em;
+            color: #65676b; /* Lighter gray text */
+        }
+        
+        #loader {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <button onclick="history.back()" class="back-button">&larr;</button>
+        <h1>Subject Test</h1>
+    </header>
+
+    <main id="document-list-container" class="document-list">
+        <div id="loader">Loading documents...</div>
+    </main>
+    
+    <!-- === FOOTER EDITED HERE === -->
+    <div class="footer-message">
+        <p class="footer-line-1">That's all for now.</p>
+        <p class="footer-line-2">More topics will be added soon.</p>
+    </div>
+
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBnkCh8r_Ewx8lbr0RBB7i6M-xdABphd9w",
+            authDomain: "initialisation-cfb78.firebaseapp.com",
+            projectId: "initialisation-cfb78",
+            storageBucket: "initialisation-cfb78.firebasestorage.app",
+            messagingSenderId: "217554560023",
+            appId: "1:217554560023:web:5ca34ac80acd8aba872852",
+            measurementId: "G-S9T0PWGZQX"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        const listContainer = document.getElementById('document-list-container');
+        const loader = document.getElementById('loader');
+
+        async function fetchDocuments() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const filterClass = urlParams.get('class');
+
+                let query = db.collection("documents").orderBy("createdAt", "desc");
+
+                if (filterClass) {
+                    query = query.where("class", "==", filterClass);
+                }
+
+                const querySnapshot = await query.get();
+                
+                listContainer.innerHTML = ''; 
+
+                if (querySnapshot.empty) {
+                     listContainer.innerHTML = '<p style="text-align:center; color: #555;">No documents found for this selection.</p>';
+                     return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const docLink = document.createElement('a');
+                    docLink.href = data.url;
+                    docLink.className = 'document-item';
+                    docLink.target = '_blank';
+                    docLink.rel = 'noopener noreferrer';
+
+                    docLink.innerHTML = `
+                        <span class="title">${data.title}</span>
+                        <span class="arrow">&gt;</span>
+                    `;
+
+                    listContainer.appendChild(docLink);
+                });
+
+            } catch (error) {
+                console.error("Error fetching documents: ", error);
+                loader.textContent = 'Failed to load documents. Please try again later.';
+            }
+        }
+
+        window.onload = fetchDocuments;
+    </script>
+</body>
+</html>
