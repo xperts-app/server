@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Tests</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #007bff;
+            --background-color: #f0f4f9;
+            --text-dark: #212529;
+            --text-light: #6c757d;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --success-bg: #e6f6f2;
+            --success-text: #008767;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .main-container {
+            max-width: 500px;
+            margin: 20px auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .header a {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+        
+        .test-carousel-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            gap: 16px;
+            padding-bottom: 16px; /* For scrollbar visibility */
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .test-carousel-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+
+        .test-card {
+            flex: 0 0 90%;
+            max-width: 90%;
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
+            scroll-snap-align: start;
+            box-sizing: border-box;
+        }
+        
+        .results-banner {
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .test-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+        }
+
+        .test-details {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .test-details span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-view-result {
+            background-color: var(--primary-blue);
+            color: #fff;
+            border: none;
+            padding: 14px 0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            transition: background-color .3s;
+        }
+        .btn-view-result:hover {
+            background-color: #0056b3;
+        }
+
+        #loading-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <div class="header">
+            <h2>Your tests</h2>
+            <a href="3.html">View all</a>
+        </div>
+        
+        <div class="test-carousel-container" id="test-list">
+            <!-- Test cards will be inserted here by JavaScript -->
+        </div>
+        <p id="loading-message">Loading your tests...</p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+          authDomain: "xperts-data.firebaseapp.com",
+          projectId: "xperts-data",
+          storageBucket: "xperts-data.appspot.com",
+          messagingSenderId: "934675149024",
+          appId: "1:934675149024:web:23486a5f38f65f103ce085",
+          measurementId: "G-6TS06NTDZQ"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const studentId = localStorage.getItem('loggedInUserId');
+            if (!studentId) {
+                // If not logged in, redirect to login page
+                window.location.href = 'login.html';
+                return;
+            }
+            fetchStudentTests(studentId);
+        });
+
+        async function fetchStudentTests(studentId) {
+            const testListContainer = document.getElementById('test-list');
+            const loadingMessage = document.getElementById('loading-message');
+            
+            try {
+                // Query tests collection. This fetches all tests, then we filter client-side.
+                // For larger scale, a more efficient query or data structure would be needed.
+                const snapshot = await db.collection('tests').orderBy('createdAt', 'desc').get();
+                
+                let testsFound = false;
+                snapshot.forEach(doc => {
+                    const test = doc.data();
+                    // Check if the current student's ID exists as a key in the results object
+                    if (test.results && test.results[studentId]) {
+                        testsFound = true;
+                        const testCard = createTestCard(doc.id, test);
+                        testListContainer.innerHTML += testCard;
+                    }
+                });
+
+                if (testsFound) {
+                    loadingMessage.style.display = 'none';
+                } else {
+                    loadingMessage.textContent = "You haven't appeared for any tests yet.";
+                }
+
+            } catch (error) {
+                console.error("Error fetching tests: ", error);
+                loadingMessage.textContent = "Could not load tests. Please try again later.";
+            }
+        }
+
+        function createTestCard(testId, testData) {
+            const testDate = new Date(testData.testDate).toLocaleDateString('en-GB', {
+                day: 'numeric', month: 'short'
+            });
+
+            return `
+                <div class="test-card">
+                    <div class="results-banner">Results are out</div>
+                    <h3>${testData.testName}</h3>
+                    <div class="test-details">
+                        <span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v1h16V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5zM16 14V5H0v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2zM1 6.5a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-1z"/>
+                            </svg>
+                            ${testDate}
+                        </span>
+                        <span>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                            </svg>
+                            180 Min
+                        </span>
+                        <span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                              <path d="M12 1H4a1 1 0 0 0-1 1v10.755S4 11 8 11s5 1.755 5 1.755V2a1 1 0 0 0-1-1zM4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H4z"/>
+                              <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                            </svg>
+                            ${testData.mode}
+                        </span>
+                    </div>
+                    <a href="3.html?testId=${testId}" class="btn-view-result">View Result</a>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
