@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Report</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #007bff;
+            --background-color: #f0f4f9;
+            --text-dark: #212529;
+            --text-light: #6c757d;
+            --card-bg: #ffffff;
+            --border-color: #e9ecef;
+            --danger-text: #dc3545;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            color: var(--text-dark);
+        }
+
+        .header {
+            background-color: var(--card-bg);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .header .back-arrow {
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-dark);
+            text-decoration: none;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .content-area {
+            padding: 20px;
+        }
+
+        .report-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        /* List View Styles */
+        #performance-report-list .list-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        #performance-report-list .list-item:last-child {
+            border-bottom: none;
+        }
+        .list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .list-item-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 0;
+        }
+        .arrow-icon { font-weight: bold; color: var(--text-light); }
+        .list-item p {
+            font-size: 14px;
+            color: var(--text-light);
+            margin: 0 0 12px 0;
+        }
+        .list-item-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+        .list-item-footer .pattern { color: var(--text-light); }
+        .list-item-footer .marks { font-weight: 600; font-size: 16px; }
+        .list-item-footer .absent { color: var(--danger-text); font-weight: 600; }
+
+        /* Detail View Styles */
+        .detail-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .detail-header h2 { font-size: 16px; margin: 0 0 4px 0; font-weight: 600; }
+        .detail-header p { font-size: 13px; color: var(--text-light); margin: 0; }
+        
+        .detail-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            text-align: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .info-item { padding: 0 10px; }
+        .info-item .label { font-size: 12px; color: var(--text-light); margin-bottom: 4px; }
+        .info-item .value { font-size: 14px; font-weight: 500; }
+        
+        .subject-marks-list {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .subject-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            font-size: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .subject-item:last-child { border-bottom: none; }
+        .subject-item .subject-name { color: var(--text-dark); }
+        .subject-item .subject-marks { font-weight: 600; }
+        
+        #loading-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <a href="javascript:history.back()" class="back-arrow">&larr;</a>
+        <h1>Performance Report</h1>
+    </div>
+
+    <div class="content-area">
+        <!-- View 1: List of all tests (like first image) -->
+        <div id="performance-report-list"></div>
+
+        <!-- View 2: Detailed report of one test (like third image) -->
+        <div id="performance-report-detail" style="display: none;"></div>
+
+        <p id="loading-message">Loading report...</p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = {
+          apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
+          authDomain: "xperts-data.firebaseapp.com",
+          projectId: "xperts-data",
+          storageBucket: "xperts-data.appspot.com",
+          messagingSenderId: "934675149024",
+          appId: "1:934675149024:web:23486a5f38f65f103ce085",
+          measurementId: "G-6TS06NTDZQ"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const studentId = localStorage.getItem('loggedInUserId');
+            if (!studentId) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const testId = urlParams.get('testId');
+
+            if (testId) {
+                // Show detailed view for a single test
+                document.getElementById('performance-report-list').style.display = 'none';
+                document.getElementById('performance-report-detail').style.display = 'block';
+                fetchTestDetails(studentId, testId);
+            } else {
+                // Show list view of all tests
+                document.getElementById('performance-report-list').style.display = 'block';
+                document.getElementById('performance-report-detail').style.display = 'none';
+                fetchAllTestResults(studentId);
+            }
+        });
+
+        // Function for the "View All" page
+        async function fetchAllTestResults(studentId) {
+            const listContainer = document.getElementById('performance-report-list');
+            const loadingMessage = document.getElementById('loading-message');
+            
+            try {
+                const snapshot = await db.collection('tests').orderBy('createdAt', 'desc').get();
+                let resultsFound = false;
+
+                snapshot.forEach(doc => {
+                    const test = doc.data();
+                    const testId = doc.id;
+                    const studentResult = test.results ? test.results[studentId] : null;
+
+                    if (studentResult) {
+                        resultsFound = true;
+                        listContainer.innerHTML += createListItemHTML(testId, test, studentResult);
+                    }
+                });
+
+                if (resultsFound) {
+                    loadingMessage.style.display = 'none';
+                } else {
+                    loadingMessage.textContent = "No performance reports found.";
+                }
+            } catch (error) {
+                console.error("Error fetching all results:", error);
+                loadingMessage.textContent = "Could not load reports. Please try again.";
+            }
+        }
+
+        // Function for the detailed report page
+        async function fetchTestDetails(studentId, testId) {
+            const detailContainer = document.getElementById('performance-report-detail');
+            const loadingMessage = document.getElementById('loading-message');
+            
+            try {
+                const doc = await db.collection('tests').doc(testId).get();
+                if (!doc.exists) {
+                    throw new Error("Test not found");
+                }
+                const test = doc.data();
+                const studentResult = test.results ? test.results[studentId] : null;
+
+                if (studentResult) {
+                    detailContainer.innerHTML = createDetailViewHTML(testId, test, studentResult);
+                    loadingMessage.style.display = 'none';
+                } else {
+                    throw new Error("Result not found for this test");
+                }
+            } catch (error) {
+                console.error("Error fetching test details:", error);
+                loadingMessage.textContent = "Could not load test details.";
+            }
+        }
+        
+        function createListItemHTML(testId, testData, studentResult) {
+            const formattedDate = testData.testDate.split('-').reverse().join('-');
+            const marksHTML = studentResult.status === 'Absent'
+                ? `<span class="absent">Absent</span>`
+                : `<span class="marks">${studentResult.totalMarks}</span>`;
+            
+            return `
+                <a href="?testId=${testId}" class="report-card list-item">
+                    <div class="list-item-header">
+                        <h3>${testData.testName}</h3>
+                        <span class="arrow-icon">&gt;</span>
+                    </div>
+                    <p>(test_${testId.substring(0,10)}) ${formattedDate}</p>
+                    <div class="list-item-footer">
+                        <div>
+                            <span class="pattern-label">Pattern</span><br>
+                            <span class="pattern">${testData.pattern || 'N/A'}</span>
+                        </div>
+                        <div>
+                            <span class="marks-label">Marks</span><br>
+                            ${marksHTML}
+                        </div>
+                    </div>
+                </a>
+            `;
+        }
+
+        function createDetailViewHTML(testId, testData, studentResult) {
+            const formattedDate = testData.testDate.split('-').reverse().join('-');
+            
+            let subjectsHTML = '';
+            for (const subject in studentResult.subjectMarks) {
+                subjectsHTML += `
+                    <li class="subject-item">
+                        <span class="subject-name">${subject}</span>
+                        <span class="subject-marks">${studentResult.subjectMarks[subject].toFixed(2)}</span>
+                    </li>
+                `;
+            }
+            // If absent, show a message instead
+            if(studentResult.status === 'Absent') {
+                subjectsHTML = `<li class="subject-item"><span class="subject-name">You were marked absent for this test.</span></li>`;
+            }
+
+            return `
+                <div class="report-card">
+                    <div class="detail-header">
+                        <h2>${testData.testName}</h2>
+                        <p>(test_${testId.substring(0,10)}) ${formattedDate}<br>Test Mode: ${testData.mode}</p>
+                    </div>
+                    <div class="detail-info-grid">
+                        <div class="info-item">
+                            <div class="label">Pattern</div>
+                            <div class="value">${testData.pattern || 'N/A'}</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Batch</div>
+                            <div class="value">bt_2oUKQok...</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Student Appear</div>
+                            <div class="value">${testData.studentAppear || 0}</div>
+                        </div>
+                    </div>
+                    <ul class="subject-marks-list">
+                        <li class="subject-item" style="background-color: #f8f9fa;">
+                            <strong class="subject-name">Subject</strong>
+                            <strong class="subject-marks">Total Marks</strong>
+                        </li>
+                        ${subjectsHTML}
+                    </ul>
+                </div>
+            `;
+        }
+
+    </script>
+</body>
+  </html>
