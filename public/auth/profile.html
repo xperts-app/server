@@ -1,224 +1,220 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile - ALLEN Digital</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --primary-blue:#0066ff;
+            --text-dark:#1d2c3c;
+            --text-light:#5a6b7d;
+            --border-color:#F2F6FC;
+        }
 
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      margin: 0;
-      background: #f5f7fb;
-      color: #1d2c3c;
-    }
-    .container {
-      max-width: 600px;
-      margin: 20px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-    h2 {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 10px;
-    }
-    .section {
-      margin: 20px 0;
-      padding: 15px;
-      border: 1px solid #e0e6ed;
-      border-radius: 12px;
-    }
-    .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .section-header h3 {
-      margin: 0;
-      font-size: 16px;
-    }
-    .edit-btn {
-      color: #0066ff;
-      font-size: 14px;
-      cursor: pointer;
-      font-weight: 500;
-    }
-    .field {
-      margin: 8px 0;
-    }
-    .field strong {
-      display: inline-block;
-      width: 120px;
-      font-weight: 500;
-    }
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: flex-end;
-    }
-    .modal-content {
-      background: #fff;
-      width: 100%;
-      max-width: 500px;
-      border-radius: 20px 20px 0 0;
-      padding: 20px;
-    }
-    .modal h3 {
-      margin-top: 0;
-    }
-    .modal input {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #dbe2ea;
-      border-radius: 10px;
-      margin: 10px 0;
-      font-size: 15px;
-    }
-    .modal-actions {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-    }
-    .btn {
-      padding: 12px 20px;
-      border-radius: 10px;
-      font-weight: 500;
-      border: none;
-      cursor: pointer;
-    }
-    .btn.cancel {
-      background: #f0f0f0;
-      color: #333;
-    }
-    .btn.save {
-      background: #0066ff;
-      color: white;
-    }
-  </style>
+        body{
+            font-family:'Poppins',sans-serif;
+            background-color: transparent;
+            margin:0;
+            padding-top:5vh;
+            font-size:25px;
+            color:var(--text-dark);
+        }
+
+        .main-container{
+            max-width:480px;
+            margin:auto;
+            padding:20px;
+            text-align:center;
+        }
+
+        .illustration{
+            width:150px;
+            height:150px;
+            margin:0 auto 20px auto;
+        }
+
+        h2{
+            font-weight:600;
+            font-size:28px;
+            margin-bottom:30px;
+        }
+
+        .profile-details{
+            background-color: transparent;
+            border-radius:16px;
+            padding:20px 30px;
+            text-align:left;
+            box-shadow:0 8px 30px rgba(0,0,0,0.05);
+        }
+
+        .detail-item{
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:18px 0;
+            border-bottom:1px solid var(--border-color);
+        }
+
+        .detail-item:last-child{
+            border-bottom:none;
+        }
+
+        .detail-item .label{
+            font-weight:500;
+            font-size:inherit;
+        }
+
+        .detail-item .value{
+            font-weight:600;
+            font-size:inherit;
+        }
+
+        .actions{
+            margin-top:30px;
+            display:flex;
+            flex-direction:column;
+            gap:15px;
+        }
+
+        .btn{
+            padding:16px;
+            border-radius:12px;
+            font-size:inherit;
+            font-weight:600;
+            text-decoration:none;
+            display:block;
+            transition:all .3s;
+        }
+
+        .btn-primary{
+            background-color:var(--primary-blue);
+            color:#F2F6FC;
+        }
+
+        .btn-primary:hover{
+            background-color:#dbe2ea;
+        }
+
+        .btn-secondary{
+            background-color: transparent;
+            color:var(--text-light);
+            border:1px solid #dbe2ea;
+        }
+
+        .btn-secondary:hover{
+            background-color:#e6ecf5;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Personal Details</h2>
+    <div class="main-container" id="profile-container">
+        <!-- SVG Illustration -->
+        <svg class="illustration" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg"><g><path d="M75 131.8c-20.4 0-39-9.5-51.1-25.5 12.3-15.8 31-25.6 51.1-25.6s38.8 9.8 51.1 25.6c-12.1 16-30.7 25.5-51.1 25.5z" fill="#34c1a5"></path><path d="M75 18.2c-15.6 0-28.2 12.6-28.2 28.2s12.6 28.2 28.2 28.2 28.2-12.6 28.2-28.2-12.6-28.2-28.2-28.2z" fill="#ffc157"></path><path d="M103.2 46.4c0 15.6-12.6 28.2-28.2 28.2V18.2c15.6 0 28.2 12.6 28.2 28.2z" fill="#ffab2f"></path><path d="M103.2 106.3c-12.3-15.8-31-25.6-51.1-25.6v51.1C72.5 131.8 90.9 122.3 103.2 106.3z" fill="#2ca98e"></path></g></svg>
+        
+        <h2 id="greeting">Hi, Vinayak!</h2>
 
-    <div class="section">
-      <div class="section-header">
-        <h3>Contact Details</h3>
-        <span class="edit-btn" onclick="openEdit('contact')">Edit</span>
-      </div>
-      <div class="field"><strong>Phone Number:</strong> <span id="phone-display"></span></div>
-      <div class="field"><strong>Email:</strong> <span id="email-display"></span></div>
-    </div>
-
-    <div class="section">
-      <div class="section-header">
-        <h3>Student Details</h3>
-        <span class="edit-btn" onclick="openEdit('student')">Edit</span>
-      </div>
-      <div class="field"><strong>Gender:</strong> <span id="gender-display"></span></div>
-      <div class="field"><strong>Blood Group:</strong> <span id="blood-display"></span></div>
-    </div>
-  </div>
-
-  <!-- Edit Modal -->
-  <div class="modal" id="edit-modal">
-    <div class="modal-content">
-      <h3 id="modal-title">Edit</h3>
-      <form id="edit-form">
-        <div id="edit-fields"></div>
-        <div class="modal-actions">
-          <button type="button" class="btn cancel" onclick="closeModal()">Cancel</button>
-          <button type="submit" class="btn save">Save</button>
+        <div class="profile-details">
+            <div class="detail-item"><span class="label">Name:</span><span class="value" id="name-display"></span></div>
+            <div class="detail-item"><span class="label">Parent:</span><span class="value" id="parent-display"></span></div>
+            <div class="detail-item"><span class="label">Mobile:</span><span class="value" id="mobile-display"></span></div>
+            <div class="detail-item"><span class="label">Email:</span><span class="value" id="email-display"></span></div>
+            <div class="detail-item"><span class="label">Class:</span><span class="value" id="class-display"></span></div>
         </div>
-      </form>
+
+        <div class="actions">
+            <a href="5.html" class="btn btn-primary">Edit Profile</a>
+            <a href="#" id="logout-btn" class="btn btn-secondary">Logout</a>
+        </div>
     </div>
-  </div>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk",
-      authDomain: "xperts-data.firebaseapp.com",
-      projectId: "xperts-data",
-      storageBucket: "xperts-data.firebasestorage.app",
-      messagingSenderId: "934675149024",
-      appId: "1:934675149024:web:23486a5f38f65f103ce085"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", 
+            authDomain: "xperts-data.firebaseapp.com", 
+            projectId: "xperts-data", 
+            storageBucket: "xperts-data.firebasestorage.app", 
+            messagingSenderId: "934675149024", 
+            appId: "1:934675149024:web:23486a5f38f65f103ce085" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-    const userId = localStorage.getItem('loggedInUserId');
-    let currentUserData = {};
-
-    async function loadProfile() {
-      if (!userId) return window.location.href = "login.html";
-      const doc = await db.collection("users").doc(userId).get();
-      if (!doc.exists) return alert("User not found");
-      currentUserData = doc.data();
-
-      document.getElementById("phone-display").innerText = currentUserData.mobileNumber || "";
-      document.getElementById("email-display").innerText = currentUserData.email || "";
-      document.getElementById("gender-display").innerText = currentUserData.gender || "";
-      document.getElementById("blood-display").innerText = currentUserData.bloodGroup || "";
-    }
-
-    function openEdit(type) {
-      const modal = document.getElementById("edit-modal");
-      const fields = document.getElementById("edit-fields");
-      const title = document.getElementById("modal-title");
-      fields.innerHTML = "";
-      
-      if (type === "contact") {
-        title.innerText = "Edit Contact Details";
-        fields.innerHTML = `
-          <label>Phone Number</label>
-          <input type="text" id="edit-phone" value="${currentUserData.mobileNumber || ''}">
-          <label>Email</label>
-          <input type="email" id="edit-email" value="${currentUserData.email || ''}">
-        `;
-      } else if (type === "student") {
-        title.innerText = "Edit Student Details";
-        fields.innerHTML = `
-          <label>Gender</label>
-          <input type="text" id="edit-gender" value="${currentUserData.gender || ''}">
-          <label>Blood Group</label>
-          <input type="text" id="edit-blood" value="${currentUserData.bloodGroup || ''}">
-        `;
-      }
-
-      modal.style.display = "flex";
-
-      document.getElementById("edit-form").onsubmit = async (e) => {
-        e.preventDefault();
-        let updates = {};
-        if (type === "contact") {
-          updates.mobileNumber = document.getElementById("edit-phone").value;
-          updates.email = document.getElementById("edit-email").value;
-        } else if (type === "student") {
-          updates.gender = document.getElementById("edit-gender").value;
-          updates.bloodGroup = document.getElementById("edit-blood").value;
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
         }
-        await db.collection("users").doc(userId).update(updates);
-        closeModal();
-        loadProfile();
-      };
-    }
 
-    function closeModal() {
-      document.getElementById("edit-modal").style.display = "none";
-    }
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('profile-container');
+            const userId = localStorage.getItem('loggedInUserId');
 
-    loadProfile();
-  </script>
+            const fontSize = getQueryParam('size');
+            const textColor = getQueryParam('colour');
+            if (fontSize) document.body.style.fontSize = fontSize;
+            if (textColor) document.body.style.color = textColor;
+
+            if (!userId) {
+                alert("You must be logged in to view your profile.");
+                window.location.href = '1.html';
+                return;
+            }
+
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                if (!userDoc.exists) {
+                    alert("User profile not found. Logging out.");
+                    localStorage.clear();
+                    window.location.href = '1.html';
+                    return;
+                }
+
+                const userData = userDoc.data();
+                document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
+
+                let studentName = userData.fullName || "N/A";
+                if (studentName.length > 6) {
+                    studentName = studentName.substring(0, 6) + "...";
+                }
+                document.getElementById('name-display').textContent = studentName;
+
+                let parentName = userData.parentName || "N/A";
+                if (parentName !== "N/A") {
+                    let parts = parentName.trim().split(" ");
+                    let displayParent = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                    if (displayParent.length > 6) {
+                        displayParent = displayParent.substring(0, 6) + "...";
+                    }
+                    parentName = displayParent;
+                }
+                document.getElementById('parent-display').textContent = parentName;
+
+                document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
+                document.getElementById('email-display').textContent = userData.email || 'N/A';
+
+                let classText = userData.class || 'N/A';
+                if (userData.goal) {
+                    classText = `${userData.class} ${userData.goal}`;
+                }
+                document.getElementById('class-display').textContent = classText;
+
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                container.innerHTML = '<h2>Error loading profile. Please try again.</h2>';
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm("Are you sure you want to logout?")) {
+                localStorage.clear();
+                window.location.href = '1.html';
+            }
+        });
+    </script>
 </body>
 </html>
