@@ -179,18 +179,24 @@
                 // Greeting -> first word
                 document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
 
-                // Smart Name -> last word if 2+ words, else first word
-                let parts = (userData.fullName || "N/A").trim().split(" ");
-                let displayName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-
-                // Truncate to 6 chars + ...
-                if (displayName.length > 6) {
-                    displayName = displayName.substring(0, 6) + "...";
+                // Student name (like before → truncate after 6 chars + "...")
+                let studentName = userData.fullName || "N/A";
+                if (studentName.length > 6) {
+                    studentName = studentName.substring(0, 6) + "...";
                 }
-                document.getElementById('name-display').textContent = displayName;
+                document.getElementById('name-display').textContent = studentName;
 
-                // Parent name
-                document.getElementById('parent-display').textContent = userData.parentName || "N/A";
+                // Parent name (last word, truncate to 6 chars + "...")
+                let parentName = userData.parentName || "N/A";
+                if (parentName !== "N/A") {
+                    let parts = parentName.trim().split(" ");
+                    let displayParent = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+                    if (displayParent.length > 6) {
+                        displayParent = displayParent.substring(0, 6) + "...";
+                    }
+                    parentName = displayParent;
+                }
+                document.getElementById('parent-display').textContent = parentName;
 
                 // Other fields
                 document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
