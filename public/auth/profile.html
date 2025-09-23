@@ -122,6 +122,9 @@
             <div class="detail-item"><span class="label">Mobile:</span><span class="value" id="mobile-display"></span></div>
             <div class="detail-item"><span class="label">Email:</span><span class="value" id="email-display"></span></div>
             <div class="detail-item"><span class="label">Class:</span><span class="value" id="class-display"></span></div>
+            <div class="detail-item"><span class="label">DOB:</span><span class="value" id="dob-display"></span></div>
+            <div class="detail-item"><span class="label">Board:</span><span class="value" id="board-display"></span></div>
+            <div class="detail-item"><span class="label">Others:</span><span class="value" id="others-display"></span></div>
         </div>
 
         <div class="actions">
@@ -176,22 +179,15 @@
                 const userData = userDoc.data();
                 document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
 
+                // Display full name, truncate if more than 6 chars
                 let studentName = userData.fullName || "N/A";
                 if (studentName.length > 6) {
                     studentName = studentName.substring(0, 6) + "...";
                 }
                 document.getElementById('name-display').textContent = studentName;
 
-                let parentName = userData.parentName || "N/A";
-                if (parentName !== "N/A") {
-                    let parts = parentName.trim().split(" ");
-                    let displayParent = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-                    if (displayParent.length > 6) {
-                        displayParent = displayParent.substring(0, 6) + "...";
-                    }
-                    parentName = displayParent;
-                }
-                document.getElementById('parent-display').textContent = parentName;
+                // Parent name: display full without truncation
+                document.getElementById('parent-display').textContent = userData.parentName || "N/A";
 
                 document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
                 document.getElementById('email-display').textContent = userData.email || 'N/A';
@@ -201,6 +197,11 @@
                     classText = `${userData.class} ${userData.goal}`;
                 }
                 document.getElementById('class-display').textContent = classText;
+
+                // New fields
+                document.getElementById('dob-display').textContent = userData.dob || 'N/A';
+                document.getElementById('board-display').textContent = userData.board || 'N/A';
+                document.getElementById('others-display').textContent = userData.others || 'N/A';
 
             } catch (error) {
                 console.error("Error fetching profile:", error);
