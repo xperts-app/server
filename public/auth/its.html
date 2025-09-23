@@ -19,8 +19,8 @@
             background-color:var(--background-color);
             margin:0;
             padding-top:5vh;
-            font-size:25px;   /* default size */
-            color:var(--text-dark); /* default text color */
+            font-size:25px;   /* default */
+            color:var(--text-dark); /* default */
         }
 
         .main-container{
@@ -129,26 +129,88 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script>
+        const firebaseConfig = { 
+            apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", 
+            authDomain: "xperts-data.firebaseapp.com", 
+            projectId: "xperts-data", 
+            storageBucket: "xperts-data.firebasestorage.app", 
+            messagingSenderId: "934675149024", 
+            appId: "1:934675149024:web:23486a5f38f65f103ce085" 
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         // Utility function to get query parameters
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Get values from URL parameters
-            const fontSize = getQueryParam('size');   // e.g. "18px"
-            const textColor = getQueryParam('colour'); // e.g. "#000000"
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('profile-container');
+            const userId = localStorage.getItem('loggedInUserId');
 
-            // Apply font size to body
-            if (fontSize) {
-                document.body.style.fontSize = fontSize;
+            // Apply font size & color from URL
+            const fontSize = getQueryParam('size');
+            const textColor = getQueryParam('colour');
+            if (fontSize) document.body.style.fontSize = fontSize;
+            if (textColor) document.body.style.color = textColor;
+
+            // If no user is logged in, redirect
+            if (!userId) {
+                alert("You must be logged in to view your profile.");
+                window.location.href = '1.html';
+                return;
             }
 
-            // Apply text color to body
-            if (textColor) {
-                document.body.style.color = textColor;
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+
+                if (!userDoc.exists) {
+                    alert("User profile not found. Logging out.");
+                    localStorage.clear();
+                    window.location.href = '1.html';
+                    return;
+                }
+
+                const userData = userDoc.data();
+                
+                // Greeting (first word of name)
+                document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
+
+                // Truncate name to 6 characters + "..."
+                let nameText = userData.fullName || 'N/A';
+                if (nameText.length > 6) {
+                    nameText = nameText.substring(0, 6) + "...";
+                }
+                document.getElementById('name-display').textContent = nameText;
+
+                // Other fields
+                document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
+                document.getElementById('email-display').textContent = userData.email || 'N/A';
+
+                // Handle combined class/goal display
+                let classText = userData.class || 'N/A';
+                if (userData.goal && (userData.goal === 'NEET' || userData.goal === 'JEE')) {
+                    classText = `${userData.class} ${userData.goal}`;
+                }
+                document.getElementById('class-display').textContent = classText;
+
+            } catch (error) {
+                console.error("Error fetching profile:", error);
+                container.innerHTML = '<h2>Error loading profile. Please try again.</h2>';
+            }
+        });
+
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm("Are you sure you want to logout?")) {
+                localStorage.clear();
+                window.location.href = '1.html';
             }
         });
     </script>
