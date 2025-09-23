@@ -117,10 +117,11 @@
         <h2 id="greeting">Hi, Vinayak!</h2>
 
         <div class="profile-details">
-            <div class="detail-item"><span class="value" id="name-display">Name</span></div>
-            <div class="detail-item"><span class="value" id="mobile-display">0987654321</span></div>
-            <div class="detail-item"><span class="value" id="email-display">email@example.com</span></div>
-            <div class="detail-item"><span class="value" id="class-display">class</span></div>
+            <div class="detail-item"><span class="label">Name:</span><span class="value" id="name-display"></span></div>
+            <div class="detail-item"><span class="label">Parent:</span><span class="value" id="parent-display"></span></div>
+            <div class="detail-item"><span class="label">Mobile:</span><span class="value" id="mobile-display"></span></div>
+            <div class="detail-item"><span class="label">Email:</span><span class="value" id="email-display"></span></div>
+            <div class="detail-item"><span class="label">Class:</span><span class="value" id="class-display"></span></div>
         </div>
 
         <div class="actions">
@@ -143,7 +144,6 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Utility function to get query parameters
         function getQueryParam(param) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(param);
@@ -159,7 +159,6 @@
             if (fontSize) document.body.style.fontSize = fontSize;
             if (textColor) document.body.style.color = textColor;
 
-            // If no user is logged in, redirect
             if (!userId) {
                 alert("You must be logged in to view your profile.");
                 window.location.href = '1.html';
@@ -168,7 +167,6 @@
 
             try {
                 const userDoc = await db.collection('users').doc(userId).get();
-
                 if (!userDoc.exists) {
                     alert("User profile not found. Logging out.");
                     localStorage.clear();
@@ -178,23 +176,28 @@
 
                 const userData = userDoc.data();
                 
-                // Greeting (first word of name)
+                // Greeting -> first word
                 document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
 
-                // Truncate name to 6 characters + "..."
-                let nameText = userData.fullName || 'N/A';
-                if (nameText.length > 6) {
-                    nameText = nameText.substring(0, 6) + "...";
+                // Smart Name -> last word if 2+ words, else first word
+                let parts = (userData.fullName || "N/A").trim().split(" ");
+                let displayName = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+
+                // Truncate to 6 chars + ...
+                if (displayName.length > 6) {
+                    displayName = displayName.substring(0, 6) + "...";
                 }
-                document.getElementById('name-display').textContent = nameText;
+                document.getElementById('name-display').textContent = displayName;
+
+                // Parent name
+                document.getElementById('parent-display').textContent = userData.parentName || "N/A";
 
                 // Other fields
                 document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
                 document.getElementById('email-display').textContent = userData.email || 'N/A';
 
-                // Handle combined class/goal display
                 let classText = userData.class || 'N/A';
-                if (userData.goal && (userData.goal === 'NEET' || userData.goal === 'JEE')) {
+                if (userData.goal) {
                     classText = `${userData.class} ${userData.goal}`;
                 }
                 document.getElementById('class-display').textContent = classText;
@@ -205,7 +208,6 @@
             }
         });
 
-        // Logout functionality
         document.getElementById('logout-btn').addEventListener('click', (e) => {
             e.preventDefault();
             if (confirm("Are you sure you want to logout?")) {
