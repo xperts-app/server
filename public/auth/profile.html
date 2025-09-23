@@ -179,15 +179,19 @@
                 const userData = userDoc.data();
                 document.getElementById('greeting').textContent = `Hi, ${userData.fullName.split(' ')[0]}!`;
 
-                // Display full name, truncate if more than 6 chars
+                // Student name: truncate if more than 6 characters
                 let studentName = userData.fullName || "N/A";
                 if (studentName.length > 6) {
                     studentName = studentName.substring(0, 6) + "...";
                 }
                 document.getElementById('name-display').textContent = studentName;
 
-                // Parent name: display full without truncation
-                document.getElementById('parent-display').textContent = userData.parentName || "N/A";
+                // Parent name: truncate if more than 6 characters
+                let parentName = userData.parentName || "N/A";
+                if (parentName.length > 6) {
+                    parentName = parentName.substring(0, 6) + "...";
+                }
+                document.getElementById('parent-display').textContent = parentName;
 
                 document.getElementById('mobile-display').textContent = userData.mobileNumber || 'N/A';
                 document.getElementById('email-display').textContent = userData.email || 'N/A';
