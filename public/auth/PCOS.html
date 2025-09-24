@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: 'Poppins', sans-serif;
-      background: transparent; /* no background */
+      background: transparent;
       margin: 0;
       padding: 0;
       text-align: center;
@@ -16,7 +16,7 @@
       font-size: 20px;
       font-weight: 600;
       color: #1d2c3c;
-      white-space: nowrap; /* always one line */
+      white-space: nowrap; /* always single line */
     }
     .great { color: green; }
     .better { color: #28a745; }
@@ -70,27 +70,31 @@
           return;
         }
 
-        // Check performance trend
+        let latest = marks[marks.length - 1]; // last test score
+        let maxMarks = 100; // adjust if your tests have diff max marks
+        let percentage = (latest / maxMarks) * 100;
+
+        // Detect trend
         let improving = true;
         let declining = true;
-
-        for (let i=1; i<marks.length; i++) {
-          if (marks[i] < marks[i-1]) improving = false;
-          if (marks[i] > marks[i-1]) declining = false;
+        for (let i = 1; i < marks.length; i++) {
+          if (marks[i] < marks[i - 1]) improving = false;
+          if (marks[i] > marks[i - 1]) declining = false;
         }
 
-        if (improving) {
-          feedbackDiv.textContent = "Doing Great!";
-          feedbackDiv.className = "great";
-        } else if (!improving && !declining) {
-          feedbackDiv.textContent = "Doing Slightly Better.";
-          feedbackDiv.className = "better";
-        } else if (declining) {
-          feedbackDiv.textContent = "Doing Not Well, Try Harder.";
+        // Feedback by latest performance
+        if (percentage < 40) {
+          feedbackDiv.textContent = "Doing Not Well, Try Harder. Focus on revision and practice.";
           feedbackDiv.className = "poor";
-        } else {
-          feedbackDiv.textContent = "Doing Average.";
+        } else if (percentage < 60) {
+          feedbackDiv.textContent = "Doing Average. Try to improve your weak subjects.";
           feedbackDiv.className = "average";
+        } else if (percentage < 80) {
+          feedbackDiv.textContent = "Doing Slightly Better. Keep it up!";
+          feedbackDiv.className = "better";
+        } else {
+          feedbackDiv.textContent = "Doing Great! Excellent work!";
+          feedbackDiv.className = "great";
         }
 
       } catch (err) {
