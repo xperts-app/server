@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Progress Chart</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      text-align: center;
+    }
+    #feedback {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      white-space: nowrap; /* keep single line */
+    }
+    .great { color: green; }
+    .better { color: #28a745; }
+    .average { color: #ff9800; }
+    .poor { color: red; }
+    canvas {
+      width: 350px !important;
+      height: 175px !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="feedback">Loading...</div>
+  <canvas id="progressChart"></canvas>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    const firebaseConfig = { 
+      apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", 
+      authDomain: "xperts-data.firebaseapp.com", 
+      projectId: "xperts-data", 
+      storageBucket: "xperts-data.firebasestorage.app", 
+      messagingSenderId: "934675149024", 
+      appId: "1:934675149024:web:23486a5f38f65f103ce085" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const userId = localStorage.getItem("loggedInUserId");
+    const feedbackDiv = document.getElementById("feedback");
+    const ctx = document.getElementById("progressChart").getContext("2d");
+
+    async function loadMarks() {
+      if (!userId) {
+        feedbackDiv.textContent = "Not logged in.";
+        return;
+      }
+
+      try {
+        const snapshot = await db.collection("tests").orderBy("testDate", "asc").get();
+        let marks = [];
+        let labels = [];
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.results && data.results[userId]) {
+            const result = data.results[userId];
+            if (result.status === "Present") {
+              marks.push(result.totalMarks || 0);
+              labels.push(new Date(data.testDate.seconds * 1000).toLocaleDateString());
+            }
+          }
+        });
+
+        if (marks.length === 0) {
+          feedbackDiv.textContent = "No marks yet.";
+          return;
+        }
+
+        // Latest mark + percentage
+        let latest = marks[marks.length - 1];
+        let maxMarks = 100; // Adjust if needed
+        let percentage = (latest / maxMarks) * 100;
+
+        // Detect trend
+        let improving = true;
+        let declining = true;
+        for (let i = 1; i < marks.length; i++) {
+          if (marks[i] < marks[i - 1]) improving = false;
+          if (marks[i] > marks[i - 1]) declining = false;
+        }
+
+        // Feedback
+        if (percentage < 40) {
+          feedbackDiv.textContent = "Doing Not Well, Try Harder.";
+          feedbackDiv.className = "poor";
+        } else if (percentage < 60) {
+          feedbackDiv.textContent = "Doing Average.";
+          feedbackDiv.className = "average";
+        } else if (percentage < 80) {
+          feedbackDiv.textContent = "Doing Slightly Better.";
+          feedbackDiv.className = "better";
+        } else {
+          feedbackDiv.textContent = "Doing Great!";
+          feedbackDiv.className = "great";
+        }
+
+        // Draw Chart
+        new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: "Marks",
+              data: marks,
+              borderColor: "#0066ff",
+              backgroundColor: "rgba(0,102,255,0.2)",
+              fill: true,
+              tension: 0.3,
+              pointRadius: 3
+            }]
+          },
+          options: {
+            responsive: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, max: maxMarks }
+            }
+          }
+        });
+
+      } catch (err) {
+        console.error(err);
+        feedbackDiv.textContent = "Error loading data.";
+      }
+    }
+
+    loadMarks();
+  </script>
+</body>
+</html>
