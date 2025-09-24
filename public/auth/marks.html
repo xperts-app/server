@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Progress Dashboard</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f0f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: transparent; /* 🔹 Transparent background */
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+      width: 420px;
+      text-align: center;
+      border: 2px solid rgba(0,0,0,0.1); /* optional subtle border */
+    }
+    h2 { color: #1d2c3c; margin-bottom: 10px; }
+    p { color: #5a6b7d; }
+    .status {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+    .great { color: green; }
+    .better { color: #28a745; }
+    .average { color: #ff9800; }
+    .poor { color: red; }
+    ul {
+      text-align: left;
+      margin-top: 15px;
+      padding-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Welcome Student</h2>
+    <p>Your performance overview</p>
+    <div id="status" class="status"></div>
+    <p id="average"></p>
+    <h3>Marks History</h3>
+    <ul id="marks-list"></ul>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+  <script>
+    const firebaseConfig = { 
+      apiKey: "AIzaSyD-ers6CRuH8bCFomXJHuLxPWff-Xa4ZVk", 
+      authDomain: "xperts-data.firebaseapp.com", 
+      projectId: "xperts-data", 
+      storageBucket: "xperts-data.firebasestorage.app", 
+      messagingSenderId: "934675149024", 
+      appId: "1:934675149024:web:23486a5f38f65f103ce085" 
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const userId = localStorage.getItem("loggedInUserId");
+    const statusDiv = document.getElementById("status");
+    const avgDiv = document.getElementById("average");
+    const marksList = document.getElementById("marks-list");
+
+    async function loadMarks() {
+      if (!userId) {
+        statusDiv.textContent = "User not logged in.";
+        return;
+      }
+      try {
+        const snapshot = await db.collection("tests").orderBy("testDate", "asc").get();
+        let marks = [];
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.results && data.results[userId]) {
+            const result = data.results[userId];
+            if (result.status === "Present") {
+              marks.push({
+                testName: data.testName || "Unnamed Test",
+                score: result.totalMarks || 0
+              });
+            }
+          }
+        });
+
+        if (marks.length === 0) {
+          statusDiv.textContent = "No marks available.";
+          return;
+        }
+
+        // Display marks history
+        marksList.innerHTML = "";
+        marks.forEach(m => {
+          let li = document.createElement("li");
+          li.textContent = `${m.testName}: ${m.score}`;
+          marksList.appendChild(li);
+        });
+
+        // Calculate average
+        let avg = marks.reduce((a,b)=>a+b.score,0) / marks.length;
+        avgDiv.textContent = `Continuous Average Marks: ${avg.toFixed(2)}`;
+
+        // Performance check
+        let scores = marks.map(m => m.score);
+        let improving = true;
+        let declining = true;
+
+        for (let i=1; i<scores.length; i++) {
+          if (scores[i] < scores[i-1]) improving = false;
+          if (scores[i] > scores[i-1]) declining = false;
+        }
+
+        if (improving) {
+          statusDiv.textContent = "Doing Great!";
+          statusDiv.className = "status great";
+        } else if (!improving && !declining) {
+          statusDiv.textContent = "Doing Slightly Better";
+          statusDiv.className = "status better";
+        } else if (declining) {
+          statusDiv.textContent = "Not Doing Well";
+          statusDiv.className = "status poor";
+        } else {
+          statusDiv.textContent = "Average Performance";
+          statusDiv.className = "status average";
+        }
+
+      } catch (err) {
+        console.error(err);
+        statusDiv.textContent = "Error loading marks.";
+      }
+    }
+
+    loadMarks();
+  </script>
+</body>
+</html>
