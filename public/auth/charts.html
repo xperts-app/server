@@ -64,24 +64,15 @@
         const snapshot = await db.collection("tests").orderBy("testDate", "asc").get();
         let marks = [];
         let labels = [];
-        let classAvg = [];
-        let classHigh = [];
 
         snapshot.forEach(doc => {
           const data = doc.data();
-          if (data.results) {
-            let studentMarks = data.results[userId]?.totalMarks || 0;
-            let allMarks = Object.values(data.results)
-              .filter(r => r.status === "Present")
-              .map(r => r.totalMarks || 0);
-
-            let avg = allMarks.length ? allMarks.reduce((a, b) => a + b, 0) / allMarks.length : 0;
-            let max = allMarks.length ? Math.max(...allMarks) : 0;
-
-            marks.push(studentMarks);
-            classAvg.push(avg);
-            classHigh.push(max);
-            labels.push(new Date(data.testDate.seconds * 1000).toLocaleDateString());
+          if (data.results && data.results[userId]) {
+            const result = data.results[userId];
+            if (result.status === "Present") {
+              marks.push(result.totalMarks || 0);
+              labels.push(new Date(data.testDate.seconds * 1000).toLocaleDateString());
+            }
           }
         });
 
@@ -90,7 +81,7 @@
           return;
         }
 
-        // Latest mark feedback
+        // Feedback for latest mark
         let latest = marks[marks.length - 1];
         let maxMarks = 100;
         let percentage = (latest / maxMarks) * 100;
@@ -109,39 +100,19 @@
           feedbackDiv.className = "great";
         }
 
-        // Chart
+        // Chart only bars
         new Chart(ctx, {
+          type: "bar",
           data: {
             labels: labels,
-            datasets: [
-              {
-                type: "bar",
-                label: "Your Marks",
-                data: marks,
-                backgroundColor: marks.map((m, i) =>
-                  i === marks.length - 1 ? "#0066ff" : "#999999"
-                ),
-                borderRadius: 5
-              },
-              {
-                type: "line",
-                label: "Class Average",
-                data: classAvg,
-                borderColor: "#ff9800",
-                backgroundColor: "#ff9800",
-                fill: false,
-                tension: 0.3
-              },
-              {
-                type: "line",
-                label: "Class Highest",
-                data: classHigh,
-                borderColor: "#2196f3",
-                backgroundColor: "#2196f3",
-                fill: false,
-                tension: 0.3
-              }
-            ]
+            datasets: [{
+              label: "Your Marks",
+              data: marks,
+              backgroundColor: marks.map((m, i) =>
+                i === marks.length - 1 ? "#0066ff" : "#999999"
+              ),
+              borderRadius: 5
+            }]
           },
           options: {
             responsive: false,
