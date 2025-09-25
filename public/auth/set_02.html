@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Image</title>
+    <style>
+        /* Basic reset and styling for full-page image view */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* Hide scrollbars */
+        }
+
+        img {
+            /* Ensure the image fits within the viewport without being distorted */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Scales the image to fit while maintaining aspect ratio */
+        }
+    </style>
+</head>
+<body>
+
+    <img id="full-profile-pic" src="" alt="Profile Picture">
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const fullProfilePic = document.getElementById('full-profile-pic');
+            
+            // Retrieve the saved image URL from localStorage
+            const savedImageUrl = localStorage.getItem('profileImageUrl');
+            
+            // Set the default image URL in case nothing is saved
+            const defaultImageUrl = 'https://xperts-app.github.io/extensions/cdn/Images/profile/1.jpg';
+
+            // Use the saved image if it exists, otherwise use the default
+            fullProfilePic.src = savedImageUrl || defaultImageUrl;
+        });
+    </script>
+
+</body>
+</html>
