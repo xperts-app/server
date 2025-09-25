@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Profile Picture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #0066ff;
+            --background-color: #f0f4f9;
+            --text-dark: #1d2c3c;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-dark);
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        #profile-pic-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 20px auto;
+            cursor: pointer;
+        }
+
+        #profile-pic {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--primary-blue);
+        }
+
+        #profile-pic-container::after {
+            content: 'Change';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 8px 0;
+            border-bottom-left-radius: 75px;
+            border-bottom-right-radius: 75px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-weight: 500;
+        }
+
+        #profile-pic-container:hover::after {
+            opacity: 1;
+        }
+
+        .button-group {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .btn {
+            background-color: var(--primary-blue);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .3s;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: #0052cc;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Modal for Image Selection */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 15px;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        #image-grid img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.3s;
+        }
+        
+        #image-grid img:hover {
+            border-color: var(--primary-blue);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Your Profile</h2>
+        <p>Click on the image to change your profile picture.</p>
+        
+        <div id="profile-pic-container">
+            <img id="profile-pic" src="https://xperts-app.github.io/extensions/cdn/Images/profile/1.jpg" alt="Profile Picture">
+        </div>
+
+        <div class="button-group">
+            <a href="2.html" target="_blank" class="btn">View Full Image</a>
+            <button id="logout-btn" class="btn btn-secondary">Logout</button>
+        </div>
+    </div>
+
+    <!-- The Modal -->
+    <div id="image-selector-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3>Select a Profile Picture</h3>
+        <div id="image-grid"></div>
+      </div>
+    </div>
+
+    <script>
+        // --- 1. Authentication Check ---
+        // This code runs immediately to protect the page.
+        (function checkAuth() {
+            const userId = localStorage.getItem('loggedInUserId');
+            if (!userId) {
+                alert('You must be logged in to view this page.');
+                // Redirect to the login page
+                window.location.href = 'login.html';
+            }
+        })();
+
+
+        // --- 2. Page Functionality ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const profilePic = document.getElementById('profile-pic');
+            const profilePicContainer = document.getElementById('profile-pic-container');
+            const logoutBtn = document.getElementById('logout-btn');
+            const modal = document.getElementById('image-selector-modal');
+            const closeBtn = document.querySelector('.close-btn');
+            const imageGrid = document.getElementById('image-grid');
+
+            const baseUrl = 'https://xperts-app.github.io/extensions/cdn/Images/profile/';
+            const defaultImage = `${baseUrl}1.jpg`;
+
+            // Load saved profile picture or set default
+            const savedImageUrl = localStorage.getItem('profileImageUrl');
+            profilePic.src = savedImageUrl || defaultImage;
+
+            // Populate the modal with image choices
+            for (let i = 1; i <= 20; i++) {
+                const img = document.createElement('img');
+                img.src = `${baseUrl}${i}.jpg`;
+                img.alt = `Profile image ${i}`;
+                img.addEventListener('click', () => {
+                    // Set the main profile picture
+                    profilePic.src = img.src;
+                    // Save the choice to localStorage
+                    localStorage.setItem('profileImageUrl', img.src);
+                    // Close the modal
+                    modal.style.display = 'none';
+                });
+                imageGrid.appendChild(img);
+            }
+
+            // --- Event Listeners ---
+            profilePicContainer.addEventListener('click', () => {
+                modal.style.display = 'block';
+            });
+
+            closeBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', (event) => {
+                if (event.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            logoutBtn.addEventListener('click', () => {
+                // Clear all login data
+                localStorage.clear();
+                // Redirect to login page
+                window.location.href = 'login.html';
+            });
+        });
+    </script>
+</body>
+</html>
