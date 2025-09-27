@@ -217,6 +217,8 @@
                     classText = "11";
                 } else if (classText.includes("12")) {
                     classText = "12";
+                } else if (/class\s*6-10/i.test(classText) || /class\s*6\s*to\s*10/i.test(classText)) {
+                    classText = "6-10";
                 }
 
                 if (!goalText && userData.class) {
@@ -224,6 +226,8 @@
                         goalText = "NEET";
                     } else if (userData.class.toUpperCase().includes("JEE")) {
                         goalText = "JEE";
+                    } else if (/class\s*6-10/i.test(userData.class) || /class\s*6\s*to\s*10/i.test(userData.class)) {
+                        goalText = "6-10";
                     }
                 }
 
