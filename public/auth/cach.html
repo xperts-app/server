@@ -231,6 +231,11 @@
                     }
                 }
 
+                // Clean up "Class" word if accidentally present
+                if (/class\s*6-10/i.test(goalText) || /class\s*6\s*to\s*10/i.test(goalText)) {
+                    goalText = "6-10";
+                }
+
                 document.getElementById('class-display').textContent = classText;
                 document.getElementById('goal-display').textContent = goalText || 'N/A';
 
