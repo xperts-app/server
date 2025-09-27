@@ -72,12 +72,6 @@
             font-size:inherit;
         }
 
-        /* Class row normal */
-        .detail-item.class-row .label,
-        .detail-item.class-row .value {
-            font-weight:400;
-        }
-
         .actions{
             margin-top:30px;
             display:flex;
@@ -127,7 +121,7 @@
             <div class="detail-item"><span class="label">Parent:</span><span class="value" id="parent-display"></span></div>
             <div class="detail-item"><span class="label">Mobile:</span><span class="value" id="mobile-display"></span></div>
             <div class="detail-item"><span class="label">Email:</span><span class="value" id="email-display"></span></div>
-            <div class="detail-item class-row"><span class="label">Class:</span><span class="value" id="class-display"></span></div>
+            <div class="detail-item"><span class="label">Class:</span><span class="value" id="class-display"></span></div>
             <div class="detail-item"><span class="label">Goal:</span><span class="value" id="goal-display"></span></div>
             <div class="detail-item"><span class="label">DOB:</span><span class="value" id="dob-display"></span></div>
             <div class="detail-item"><span class="label">Board:</span><span class="value" id="board-display"></span></div>
@@ -159,12 +153,24 @@
             return urlParams.get(param);
         }
 
+        function safeFontSize(value) {
+            if (!value) return null;
+            const valid = /^(\d+(px|em|rem|%)?)$/i;
+            return valid.test(value) ? value : null;
+        }
+
+        function safeColor(value) {
+            if (!value) return null;
+            const valid = /^(#[0-9A-F]{3,6}|rgb\([\d,\s]+\)|[a-zA-Z]+)$/i;
+            return valid.test(value) ? value : null;
+        }
+
         document.addEventListener('DOMContentLoaded', async () => {
             const container = document.getElementById('profile-container');
             const userId = localStorage.getItem('loggedInUserId');
 
-            const fontSize = getQueryParam('size');
-            const textColor = getQueryParam('colour');
+            const fontSize = safeFontSize(getQueryParam('size'));
+            const textColor = safeColor(getQueryParam('colour'));
             if (fontSize) document.body.style.fontSize = fontSize;
             if (textColor) document.body.style.color = textColor;
 
