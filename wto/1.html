@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Add Company</title>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <style>
+        /* Import Google Fonts for a clean, modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+        @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css'); /* For icons */
+
+
+        :root {
+            --primary-color: #007bff; /* A strong blue for highlights */
+            --secondary-color: #6c757d; /* Muted gray for secondary text */
+            --text-color: #212529; /* Dark gray for main text */
+            --light-text-color: #6c757d; /* Lighter gray for secondary info */
+            --background-color: #f8f9fa; /* Lightest gray background */
+            --card-background: #ffffff;
+            --border-color: #e9ecef; /* Light gray for subtle borders */
+            --header-footer-bg: #ffffff; /* White header for a clean look */
+            --header-footer-text: #212529; /* Dark text on white header */
+            --hover-bg: #f2f2f2;
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --font-sans: 'Open Sans', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+            --border-radius-base: 8px;
+            --padding-base: 20px;
+        }
+
+        /* General Body & Typography */
+        body {
+            font-family: var(--font-sans);
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            font-size: 15px; /* Slightly smaller base font */
+        }
+
+        .container {
+            max-width: 1400px; /* Wider container for more data */
+            margin: 0 auto;
+            padding: 0 var(--padding-base);
+        }
+
+        a {
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.2s ease-in-out;
+        }
+
+        a:hover {
+            color: #0056b3; /* Darker blue on hover */
+            text-decoration: none;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-color);
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            font-weight: 600;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--header-footer-bg);
+            padding: 15px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Subtle shadow */
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header .logo {
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: 700;
+        }
+
+        .header .logo a {
+            color: var(--header-footer-text);
+            text-decoration: none;
+        }
+
+        .header nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .header nav ul li {
+            margin-left: 30px;
+        }
+
+        .header nav ul li a {
+            color: var(--header-footer-text);
+            font-weight: 500;
+            padding: 8px 0;
+            position: relative;
+            transition: color 0.3s ease;
+            opacity: 0.9;
+        }
+
+        .header nav ul li a:hover,
+        .header nav ul li a.active {
+            color: var(--primary-color); /* Primary blue on hover/active */
+            opacity: 1;
+            text-decoration: none;
+        }
+
+        .header nav ul li a.active::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 100%;
+            height: 2px;
+            background-color: var(--primary-color);
+        }
+
+        /* Main Content Area */
+        .content-area {
+            padding-top: 40px;
+            padding-bottom: 60px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex; /* Use flexbox for alignment */
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            border-radius: var(--border-radius-base);
+            text-align: center;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.2s ease;
+            border: 1px solid transparent;
+            font-size: 0.95em;
+            line-height: 1; /* Ensure consistent height */
+            margin-right: 10px; /* Spacing between buttons */
+        }
+
+        .btn.primary {
+            background-color: var(--primary-color);
+            color: #fff;
+            border-color: var(--primary-color);
+        }
+
+        .btn.primary:hover {
+            background-color: #0056b3; /* Slightly darker blue */
+            border-color: #0056b3;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.2);
+        }
+
+        .btn.secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn.secondary:hover {
+            background-color: rgba(0, 123, 255, 0.05);
+            color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 0.85em;
+            border-radius: 4px;
+        }
+
+        /* Forms - Admin Page */
+        .company-form {
+            background-color: var(--card-background);
+            padding: 30px;
+            border-radius: var(--border-radius-base);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .company-form input[type="text"],
+        .company-form input[type="number"],
+        .company-form input[type="url"],
+        .company-form input[type="date"],
+        .company-form textarea,
+        .company-form select:not([multiple]) { /* Exclude multiple select from dropdown arrow */
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: var(--font-sans);
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .company-form input[type="text"].tag-input {
+            margin-top: 8px; /* Space between select and input */
+        }
+
+        .company-form input:focus,
+        .company-form textarea:focus,
+        .company-form select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        /* Styling for single select dropdowns (Country, Company Type) */
+        .tag-select, .country-select, .company-type-select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236c757d'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 12px;
+            padding-right: 35px; /* Make space for the arrow */
+        }
+
+
+        /* For multiple select (Tags) */
+        select[multiple] {
+            height: auto; /* Allow height to adjust */
+            min-height: 120px; /* Minimum height for visibility */
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            font-family: var(--font-sans);
+            box-sizing: border-box;
+            width: 100%;
+        }
+        select[multiple] option {
+            padding: 8px 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+        }
+        select[multiple] option:last-child {
+            border-bottom: none;
+        }
+        select[multiple] option:checked {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+
+        /* Status Messages */
+        .status-message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: 600;
+            opacity: 0; /* Hidden by default */
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .status-message.success {
+            background-color: #d4edda;
+            color: var(--success-color);
+            border: 1px solid #c3e6cb;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .status-message.error {
+            background-color: #f8d7da;
+            color: var(--error-color);
+            border: 1px solid #f5c6cb;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Suggestions for Parent Org */
+        .suggestions-box {
+            border: 1px solid var(--border-color);
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+            background-color: var(--card-background);
+            border-radius: 0 0 6px 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background-color: var(--hover-bg);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--header-footer-bg);
+            color: var(--light-text-color);
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 40px;
+            font-size: 0.9em;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .header .container {
+                flex-direction: column;
+            }
+            .header nav ul {
+                margin-top: 15px;
+            }
+            .header nav ul li {
+                margin: 0 10px;
+            }
+            .container {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><a href="2.html">Company Market Data</a></h1>
+            <nav>
+                <ul>
+                    <li><a href="2.html">View Companies</a></li>
+                    <li><a href="1.html" class="active">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container content-area">
+        <h2>Add New Company</h2>
+        <form id="addCompanyForm" class="company-form">
+            <div class="form-group">
+                <label for="companyName">Company Name:</label>
+                <input type="text" id="companyName" required>
+            </div>
+            <div class="form-group">
+                <label for="tickerSymbol">Ticker Symbol (e.g., NVDA, MSFT):</label>
+                <input type="text" id="tickerSymbol">
+            </div>
+            <div class="form-group">
+                <label for="valuation">Valuation (USD):</label>
+                <input type="number" id="valuation" required>
+            </div>
+            <div class="form-group">
+                <label for="country">Country:</label>
+                <select id="country" class="country-select" required>
+                    <option value="">Select Country</option>
+                    <!-- Countries will be populated by JS -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="logoUrl">Logo URL:</label>
+                <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
+            </div>
+            <div class="form-group">
+                <label for="tag">Tags (Select multiple or create new):</label>
+                <select id="tag" class="tag-select" multiple size="5">
+                    <!-- Tags will be loaded here from Firestore -->
+                </select>
+                <div style="display: flex; align-items: center; margin-top: 10px;">
+                    <input type="text" id="newTagInput" class="tag-input" placeholder="Enter new tag and press Enter" style="flex-grow: 1;">
+                    <button type="button" id="addNewTagBtn" class="btn btn-small secondary" style="margin-left: 10px;">Add Tag</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" rows="5"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="foundingDate">Founding Date:</label>
+                <input type="date" id="foundingDate">
+            </div>
+            <div class="form-group">
+                <label for="yoyProfit">YOY Profit (%):</label>
+                <input type="number" id="yoyProfit" step="0.01" placeholder="e.g., 5.25 for 5.25% growth">
+            </div>
+            <div class="form-group">
+                <label for="ownershipChart">Chart of Ownership (e.g., URL or text description):</label>
+                <input type="text" id="ownershipChart">
+            </div>
+            <div class="form-group">
+                <label for="companyType">Company Type:</label>
+                <select id="companyType" class="company-type-select">
+                    <option value="standalone">Standalone</option>
+                    <option value="parent">Parent Organization</option>
+                    <option value="subsidiary">Subsidiary</option>
+                </select>
+            </div>
+            <div class="form-group" id="parentOrgGroup" style="display: none;">
+                <label for="parentOrg">Parent Organization:</label>
+                <input type="text" id="parentOrgSearch" placeholder="Search for parent organization...">
+                <div id="parentOrgSuggestions" class="suggestions-box"></div>
+                <input type="hidden" id="parentOrgId"> <!-- To store the selected parent's ID -->
+            </div>
+            <button type="submit" class="btn primary">Add Company</button>
+        </form>
+        <p id="statusMessage" class="status-message"></p>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 Company Market Data</p>
+        </div>
+    </footer>
+
+    <script>
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdRjk-1pfifKxmKbnjNQo4", // Replace with your actual API key
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const addCompanyForm = document.getElementById('addCompanyForm');
+        const companyTypeSelect = document.getElementById('companyType');
+        const parentOrgGroup = document.getElementById('parentOrgGroup');
+        const parentOrgSearch = document.getElementById('parentOrgSearch');
+        const parentOrgSuggestions = document.getElementById('parentOrgSuggestions');
+        const parentOrgIdInput = document.getElementById('parentOrgId');
+        const tagSelect = document.getElementById('tag');
+        const newTagInput = document.getElementById('newTagInput');
+        const addNewTagBtn = document.getElementById('addNewTagBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const countrySelect = document.getElementById('country');
+
+        // List of countries (can be expanded)
+        const countries = [
+            { name: "United States", code: "us" },
+            { name: "China", code: "cn" },
+            { name: "Japan", code: "jp" },
+            { name: "Germany", code: "de" },
+            { name: "United Kingdom", code: "gb" },
+            { name: "India", code: "in" },
+            { name: "France", code: "fr" },
+            { name: "Canada", code: "ca" },
+            { name: "Brazil", code: "br" },
+            { name: "Australia", code: "au" },
+            { name: "South Korea", code: "kr" },
+            { name: "Netherlands", code: "nl" },
+            { name: "Switzerland", code: "ch" },
+            { name: "Saudi Arabia", code: "sa" },
+            { name: "Taiwan", code: "tw" },
+            { name: "Sweden", code: "se" },
+            { name: "Italy", code: "it" },
+            { name: "Spain", code: "es" },
+            { name: "Mexico", code: "mx" },
+            { name: "Indonesia", code: "id" },
+            // Add more countries as needed
+        ];
+
+        function populateCountries() {
+            countries.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.name; // Store full name
+                option.dataset.countryCode = c.code; // Store ISO code
+                option.textContent = c.name;
+                countrySelect.appendChild(option);
+            });
+        }
+
+
+        // --- Tag Management ---
+        async function loadTags() {
+            tagSelect.innerHTML = ''; // Clear previous options
+            try {
+                const snapshot = await db.collection('tags').orderBy('name').get();
+                snapshot.forEach(doc => {
+                    const option = document.createElement('option');
+                    option.value = doc.id; // Store tag ID
+                    option.textContent = doc.data().name;
+                    tagSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error loading tags:", error);
+                statusMessage.textContent = 'Error loading tags.';
+                statusMessage.classList.add('error');
+            }
+        }
+
+        addNewTagBtn.addEventListener('click', async () => {
+            const tagName = newTagInput.value.trim();
+            if (tagName) {
+                try {
+                    const existingTag = await db.collection('tags').where('name', '==', tagName).get();
+                    if (!existingTag.empty) {
+                        statusMessage.textContent = `Tag "${tagName}" already exists.`;
+                        statusMessage.classList.add('error');
+                        return;
+                    }
+
+                    const tagDocRef = await db.collection('tags').add({ name: tagName });
+                    statusMessage.textContent = `Tag "${tagName}" added successfully.`;
+                    statusMessage.classList.add('success');
+                    newTagInput.value = '';
+                    loadTags(); // Reload tags to show the new one
+                } catch (error) {
+                    console.error("Error
