@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Add Company</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><a href="index.html">Company Market Data</a></h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">View Companies</a></li>
+                    <li><a href="admin.html" class="active">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container content-area">
+        <h2>Add New Company</h2>
+        <form id="addCompanyForm" class="company-form">
+            <div class="form-group">
+                <label for="companyName">Company Name:</label>
+                <input type="text" id="companyName" required>
+            </div>
+            <div class="form-group">
+                <label for="valuation">Valuation (USD):</label>
+                <input type="number" id="valuation" required>
+            </div>
+            <div class="form-group">
+                <label for="country">Country:</label>
+                <input type="text" id="country" required>
+            </div>
+            <div class="form-group">
+                <label for="logoUrl">Logo URL:</label>
+                <input type="url" id="logoUrl" placeholder="https://example.com/logo.png">
+            </div>
+            <div class="form-group">
+                <label for="tag">Tag:</label>
+                <select id="tag" class="tag-select">
+                    <option value="">Select or Create New</option>
+                    <!-- Tags will be loaded here from Firestore -->
+                </select>
+                <input type="text" id="newTagInput" placeholder="Enter new tag if not in list" style="display: none;">
+                <button type="button" id="toggleNewTagInput" class="btn-small">New Tag</button>
+            </div>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" rows="5"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="foundingDate">Founding Date:</label>
+                <input type="date" id="foundingDate">
+            </div>
+            <div class="form-group">
+                <label for="yoyProfit">YOY Profit (%):</label>
+                <input type="number" id="yoyProfit">
+            </div>
+            <div class="form-group">
+                <label for="ownershipChart">Chart of Ownership (e.g., URL or text description):</label>
+                <input type="text" id="ownershipChart">
+            </div>
+            <div class="form-group">
+                <label for="companyType">Company Type:</label>
+                <select id="companyType">
+                    <option value="standalone">Standalone</option>
+                    <option value="parent">Parent Organization</option>
+                    <option value="subsidiary">Subsidiary</option>
+                </select>
+            </div>
+            <div class="form-group" id="parentOrgGroup" style="display: none;">
+                <label for="parentOrg">Parent Organization:</label>
+                <input type="text" id="parentOrgSearch" placeholder="Search for parent organization...">
+                <div id="parentOrgSuggestions" class="suggestions-box"></div>
+                <input type="hidden" id="parentOrgId"> <!-- To store the selected parent's ID -->
+            </div>
+            <button type="submit" class="btn primary">Add Company</button>
+        </form>
+        <p id="statusMessage" class="status-message"></p>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 Company Market Data</p>
+        </div>
+    </footer>
+
+    <script>
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdRjk-1pfifKxmKbnjNQo4", // Replace with your actual API key
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const addCompanyForm = document.getElementById('addCompanyForm');
+        const companyTypeSelect = document.getElementById('companyType');
+        const parentOrgGroup = document.getElementById('parentOrgGroup');
+        const parentOrgSearch = document.getElementById('parentOrgSearch');
+        const parentOrgSuggestions = document.getElementById('parentOrgSuggestions');
+        const parentOrgIdInput = document.getElementById('parentOrgId');
+        const tagSelect = document.getElementById('tag');
+        const newTagInput = document.getElementById('newTagInput');
+        const toggleNewTagInputBtn = document.getElementById('toggleNewTagInput');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // --- Tag Management ---
+        async function loadTags() {
+            tagSelect.innerHTML = '<option value="">Select or Create New</option>';
+            const snapshot = await db.collection('tags').orderBy('name').get();
+            snapshot.forEach(doc => {
+                const option = document.createElement('option');
+                option.value = doc.id; // Store tag ID
+                option.textContent = doc.data().name;
+                tagSelect.appendChild(option);
+            });
+        }
+
+        toggleNewTagInputBtn.addEventListener('click', () => {
+            const isInputVisible = newTagInput.style.display === 'block';
+            newTagInput.style.display = isInputVisible ? 'none' : 'block';
+            tagSelect.style.display = isInputVisible ? 'block' : 'none';
+            toggleNewTagInputBtn.textContent = isInputVisible ? 'New Tag' : 'Select Existing';
+            if (isInputVisible) {
+                newTagInput.value = ''; // Clear new tag input if switching back
+                tagSelect.value = ''; // Clear selection
+            } else {
+                loadTags(); // Reload tags if switching to select existing
+            }
+        });
+
+        // --- Parent Organization Logic ---
+        companyTypeSelect.addEventListener('change', () => {
+            if (companyTypeSelect.value === 'subsidiary') {
+                parentOrgGroup.style.display = 'block';
+            } else {
+                parentOrgGroup.style.display = 'none';
+                parentOrgSearch.value = '';
+                parentOrgIdInput.value = '';
+                parentOrgSuggestions.innerHTML = '';
+            }
+        });
+
+        parentOrgSearch.addEventListener('input', async () => {
+            const searchTerm = parentOrgSearch.value.toLowerCase();
+            parentOrgSuggestions.innerHTML = '';
+            if (searchTerm.length > 2) {
+                const snapshot = await db.collection('companies')
+                                        .where('companyType', '==', 'parent')
+                                        .orderBy('name')
+                                        .startAt(searchTerm)
+                                        .endAt(searchTerm + '\uf8ff')
+                                        .get();
+                snapshot.forEach(doc => {
+                    const company = doc.data();
+                    const div = document.createElement('div');
+                    div.classList.add('suggestion-item');
+                    div.textContent = company.name;
+                    div.dataset.id = doc.id;
+                    div.addEventListener('click', () => {
+                        parentOrgSearch.value = company.name;
+                        parentOrgIdInput.value = doc.id;
+                        parentOrgSuggestions.innerHTML = ''; // Clear suggestions after selection
+                    });
+                    parentOrgSuggestions.appendChild(div);
+                });
+            }
+        });
+
+        // --- Form Submission ---
+        addCompanyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            statusMessage.textContent = 'Adding company...';
+            statusMessage.className = 'status-message'; // Reset class
+
+            const companyName = document.getElementById('companyName').value;
+            const valuation = parseFloat(document.getElementById('valuation').value);
+            const country = document.getElementById('country').value;
+            const logoUrl = document.getElementById('logoUrl').value;
+            const description = document.getElementById('description').value;
+            const foundingDate = document.getElementById('foundingDate').value;
+            const yoyProfit = parseFloat(document.getElementById('yoyProfit').value);
+            const ownershipChart = document.getElementById('ownershipChart').value;
+            const companyType = companyTypeSelect.value;
+            let selectedTagId = tagSelect.value;
+            let selectedTagName = tagSelect.options[tagSelect.selectedIndex]?.textContent;
+
+            // Handle new tag creation
+            if (newTagInput.style.display === 'block' && newTagInput.value.trim() !== '') {
+                const newTagName = newTagInput.value.trim();
+                const tagDocRef = db.collection('tags').doc(); // Auto-generate ID
+                await tagDocRef.set({ name: newTagName });
+                selectedTagId = tagDocRef.id;
+                selectedTagName = newTagName;
+            } else if (!selectedTagId) {
+                statusMessage.textContent = 'Please select an existing tag or enter a new one.';
+                statusMessage.classList.add('error');
+                return;
+            }
+
+            const companyData = {
+                name: companyName,
+                valuation: valuation,
+                country: country,
+                logoUrl: logoUrl,
+                tagId: selectedTagId,
+                tagName: selectedTagName, // Store tag name for easier display/filtering
+                description: description,
+                foundingDate: foundingDate,
+                yoyProfit: yoyProfit,
+                ownershipChart: ownershipChart,
+                companyType: companyType,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            // Add parent organization details if subsidiary
+            if (companyType === 'subsidiary') {
+                const parentId = parentOrgIdInput.value;
+                const parentName = parentOrgSearch.value;
+                if (!parentId || !parentName) {
+                    statusMessage.textContent = 'Please select a parent organization from suggestions.';
+                    statusMessage.classList.add('error');
+                    return;
+                }
+                companyData.parentOrg = {
+                    id: parentId,
+                    name: parentName
+                };
+            }
+
+            try {
+                const docRef = await db.collection('companies').add(companyData);
+
+                // If it's a parent, add its ID to its own document for easier lookup of subsidiaries
+                if (companyType === 'parent') {
+                     await db.collection('companies').doc(docRef.id).update({
+                        parentId: docRef.id // For parent orgs, their own ID is their parent ID in a way for querying
+                    });
+                }
+                // If it's a subsidiary, update the parent's document to include this subsidiary
+                if (companyType === 'subsidiary' && companyData.parentOrg?.id) {
+                    await db.collection('companies').doc(companyData.parentOrg.id).update({
+                        subsidiaries: firebase.firestore.FieldValue.arrayUnion({
+                            id: docRef.id,
+                            name: companyName
+                        })
+                    });
+                }
+
+
+                addCompanyForm.reset();
+                parentOrgGroup.style.display = 'none'; // Hide parent org fields
+                parentOrgSuggestions.innerHTML = '';
+                newTagInput.style.display = 'none'; // Hide new tag input
+                tagSelect.style.display = 'block'; // Show tag select
+                toggleNewTagInputBtn.textContent = 'New Tag';
+                loadTags(); // Reload tags in case a new one was added
+
+                statusMessage.textContent = 'Company added successfully!';
+                statusMessage.classList.add('success');
+            } catch (error) {
+                console.error("Error adding company: ", error);
+                statusMessage.textContent = `Error adding company: ${error.message}`;
+                statusMessage.classList.add('error');
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', loadTags);
+
+    </script>
+</body>
+                  </html>
