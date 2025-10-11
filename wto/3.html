@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Details</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><a href="index.html">Company Market Data</a></h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">View Companies</a></li>
+                    <li><a href="admin.html">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container content-area">
+        <div id="companyDetail" class="company-detail-card">
+            <p id="loadingDetailMessage">Loading company details...</p>
+            <p id="errorDetailMessage" class="error" style="display: none;">Company not found or an error occurred.</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 Company Market Data</p>
+        </div>
+    </footer>
+
+    <script>
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdRjk-1pfifKxmKbnjNQo4", // Replace with your actual API key
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const companyDetailDiv = document.getElementById('companyDetail');
+        const loadingDetailMessage = document.getElementById('loadingDetailMessage');
+        const errorDetailMessage = document.getElementById('errorDetailMessage');
+
+        async function loadCompanyDetails() {
+            loadingDetailMessage.style.display = 'block';
+            errorDetailMessage.style.display = 'none';
+            companyDetailDiv.innerHTML = ''; // Clear previous content
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const companyId = urlParams.get('id');
+
+            if (!companyId) {
+                loadingDetailMessage.style.display = 'none';
+                errorDetailMessage.textContent = 'No company ID provided.';
+                errorDetailMessage.style.display = 'block';
+                return;
+            }
+
+            try {
+                const companyDoc = await db.collection('companies').doc(companyId).get();
+
+                if (!companyDoc.exists) {
+                    loadingDetailMessage.style.display = 'none';
+                    errorDetailMessage.textContent = 'Company not found.';
+                    errorDetailMessage.style.display = 'block';
+                    return;
+                }
+
+                const company = companyDoc.data();
+                const foundingDate = company.foundingDate ? new Date(company.foundingDate + 'T00:00:00').toLocaleDateString() : 'N/A';
+                const valuation = company.valuation ? `$${company.valuation.toLocaleString()}` : 'N/A';
+                const yoyProfit = company.yoyProfit !== undefined ? `${company.yoyProfit}%` : 'N/A';
+                const tagName = company.tagName || 'N/A';
+
+                companyDetailDiv.innerHTML = `
+                    <div class="detail-header">
+                        <img src="${company.logoUrl || 'https://via.placeholder.com/80?text=No+Logo'}" alt="${company.name} Logo" class="detail-logo">
+                        <h1>${company.name}</h1>
+                        <p class="tag-pill">${tagName}</p>
+                    </div>
+                    <div class="detail-section">
+                        <h2>Overview</h2>
+                        <p><strong>Valuation:</strong> ${valuation}</p>
+                        <p><strong>Country:</strong> ${company.country || 'N/A'}</p>
+                        <p><strong>Founding Date:</strong> ${foundingDate}</p>
+                        <p><strong>YOY Profit:</strong> ${yoyProfit}</p>
+                        <p><strong>Company Type:</strong> ${company.companyType || 'N/A'}</p>
+                    </div>
+                    <div class="detail-section">
+                        <h2>Description</h2>
+                        <p>${company.description || 'No description available.'}</p>
+                    </div>
+                    ${company.ownershipChart ? `
+                    <div class="detail-section">
+                        <h2>Chart of Ownership</h2>
+                        <p>${company.ownershipChart}</p>
+                        <!-- For a real chart, you would embed an image, iframe, or use a JS charting library here -->
+                    </div>
+                    ` : ''}
+
+                    ${company.companyType === 'subsidiary' && company.parentOrg ? `
+                    <div class="detail-section">
+                        <h2>Parent Organization</h2>
+                        <p>
+                            <a href="company-detail.html?id=${company.parentOrg.id}">
+                                ${company.parentOrg.name}
+                            </a>
+                        </p>
+                    </div>
+                    ` : ''}
+
+                    <div id="subsidiariesSection" class="detail-section" style="display: none;">
+                        <h2>Subsidiaries</h2>
+                        <ul id="subsidiariesList"></ul>
+                    </div>
+                `;
+
+                // If it's a parent, load its subsidiaries
+                if (company.companyType === 'parent' && company.subsidiaries && company.subsidiaries.length > 0) {
+                    const subsidiariesSection = document.getElementById('subsidiariesSection');
+                    const subsidiariesList = document.getElementById('subsidiariesList');
+                    subsidiariesSection.style.display = 'block';
+                    company.subsidiaries.forEach(sub => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `<a href="company-detail.html?id=${sub.id}">${sub.name}</a>`;
+                        subsidiariesList.appendChild(li);
+                    });
+                }
+
+            } catch (error) {
+                console.error("Error loading company details: ", error);
+                errorDetailMessage.textContent = `Error loading details: ${error.message}`;
+                errorDetailMessage.style.display = 'block';
+            } finally {
+                loadingDetailMessage.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadCompanyDetails);
+    </script>
+</body>
+  </html>
