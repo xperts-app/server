@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Market Data</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><a href="index.html">Company Market Data</a></h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html" class="active">View Companies</a></li>
+                    <li><a href="admin.html">Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container content-area">
+        <div class="filter-controls">
+            <input type="text" id="companySearch" placeholder="Search companies..." class="search-input">
+
+            <select id="countryFilter" class="filter-select">
+                <option value="">All Countries</option>
+                <!-- Options will be loaded dynamically -->
+            </select>
+
+            <select id="tagFilter" class="filter-select">
+                <option value="">All Tags</option>
+                <!-- Options will be loaded dynamically -->
+            </select>
+
+            <select id="currencySelect" class="filter-select">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <!-- Add more currencies as needed -->
+            </select>
+            <button id="applyFiltersBtn" class="btn primary">Apply Filters</button>
+        </div>
+
+        <div id="companyList" class="company-grid">
+            <!-- Company cards will be inserted here -->
+            <p id="loadingMessage">Loading companies...</p>
+        </div>
+        <p id="noCompaniesFound" class="info-message" style="display: none;">No companies found matching your criteria.</p>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2023 Company Market Data</p>
+        </div>
+    </footer>
+
+    <script>
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyBTLfh9-p5bEdRjk-1pfifKxmKbnjNQo4", // Replace with your actual API key
+            authDomain: "mn-assats.firebaseapp.com",
+            projectId: "mn-assats",
+            storageBucket: "mn-assats.firebasestorage.app",
+            messagingSenderId: "608226708515",
+            appId: "1:608226708515:web:9645d4a4f44eab0fd47596",
+            measurementId: "G-170CCKFQPL"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const companyListDiv = document.getElementById('companyList');
+        const companySearchInput = document.getElementById('companySearch');
+        const countryFilterSelect = document.getElementById('countryFilter');
+        const tagFilterSelect = document.getElementById('tagFilter');
+        const currencySelect = document.getElementById('currencySelect');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+        const loadingMessage = document.getElementById('loadingMessage');
+        const noCompaniesFoundMessage = document.getElementById('noCompaniesFound');
+
+        let allCompanies = []; // Store all companies to filter on the client-side
+        let allCountries = new Set();
+        let allTags = new Map(); // Map tag ID to tag name
+
+        // --- Load Initial Data (Companies, Countries, Tags) ---
+        async function loadInitialData() {
+            loadingMessage.style.display = 'block';
+            noCompaniesFoundMessage.style.display = 'none';
+
+            try {
+                // Load tags first
+                const tagSnapshot = await db.collection('tags').orderBy('name').get();
+                tagSnapshot.forEach(doc => {
+                    allTags.set(doc.id, doc.data().name);
+                    const option = document.createElement('option');
+                    option.value = doc.id;
+                    option.textContent = doc.data().name;
+                    tagFilterSelect.appendChild(option);
+                });
+
+                // Load companies
+                const companySnapshot = await db.collection('companies').orderBy('name').get();
+                allCompanies = companySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data(),
+                    foundingDate: doc.data().foundingDate ? new Date(doc.data().foundingDate + 'T00:00:00') : null // Convert date string to Date object
+                }));
+
+                // Populate country filter
+                allCompanies.forEach(company => {
+                    if (company.country) {
+                        allCountries.add(company.country);
+                    }
+                });
+                allCountries.forEach(country => {
+                    const option = document.createElement('option');
+                    option.value = country;
+                    option.textContent = country;
+                    countryFilterSelect.appendChild(option);
+                });
+
+                displayCompanies(allCompanies);
+
+            } catch (error) {
+                console.error("Error loading initial data: ", error);
+                companyListDiv.innerHTML = '<p class="error">Failed to load companies. Please try again later.</p>';
+            } finally {
+                loadingMessage.style.display = 'none';
+            }
+        }
+
+        // --- Display Companies ---
+        function displayCompanies(companiesToDisplay) {
+            companyListDiv.innerHTML = '';
+            if (companiesToDisplay.length === 0) {
+                noCompaniesFoundMessage.style.display = 'block';
+                return;
+            } else {
+                noCompaniesFoundMessage.style.display = 'none';
+            }
+
+            companiesToDisplay.forEach(company => {
+                const companyCard = document.createElement('div');
+                companyCard.classList.add('company-card');
+                companyCard.dataset.id = company.id; // Store ID for detail page link
+
+                const currentCurrency = currencySelect.value;
+                let displayValuation = company.valuation;
+                let currencySymbol = '$'; // Default for USD
+
+                // Simple client-side currency display (no actual conversion)
+                if (currentCurrency === 'EUR') {
+                    currencySymbol = '€';
+                } else if (currentCurrency === 'GBP') {
+                    currencySymbol = '£';
+                }
+                // For actual conversion, you'd need an API here
+
+                companyCard.innerHTML = `
+                    <img src="${company.logoUrl || 'https://via.placeholder.com/60?text=No+Logo'}" alt="${company.name} Logo" class="company-logo">
+                    <h3 class="company-name">${company.name}</h3>
+                    <p class="company-valuation">Valuation: ${currencySymbol}${displayValuation.toLocaleString()}</p>
+                    <p class="company-country">Country: ${company.country}</p>
+                    <p class="company-tag">Tag: ${company.tagName || 'N/A'}</p>
+                    <a href="company-detail.html?id=${company.id}" class="btn-small">View Details</a>
+                `;
+                companyListDiv.appendChild(companyCard);
+            });
+        }
+
+        // --- Filtering and Searching ---
+        function applyFilters() {
+            let filtered = [...allCompanies]; // Start with a copy of all companies
+
+            const searchTerm = companySearchInput.value.toLowerCase();
+            const selectedCountry = countryFilterSelect.value;
+            const selectedTag = tagFilterSelect.value;
+
+            if (searchTerm) {
+                filtered = filtered.filter(company =>
+                    company.name.toLowerCase().includes(searchTerm) ||
+                    company.description.toLowerCase().includes(searchTerm) ||
+                    company.country.toLowerCase().includes(searchTerm) ||
+                    (company.tagName && company.tagName.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            if (selectedCountry) {
+                filtered = filtered.filter(company => company.country === selectedCountry);
+            }
+
+            if (selectedTag) {
+                filtered = filtered.filter(company => company.tagId === selectedTag);
+            }
+
+            displayCompanies(filtered);
+        }
+
+        // Event Listeners
+        applyFiltersBtn.addEventListener('click', applyFilters);
+        companySearchInput.addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+        currencySelect.addEventListener('change', applyFilters); // Re-display with new currency symbol
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', loadInitialData);
+
+    </script>
+</body>
+                                                                                                                         </html>
